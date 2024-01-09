@@ -1,3 +1,4 @@
+use super::solve::PreReleaseResolution;
 use super::SDistResolution;
 use crate::artifacts::SDist;
 use crate::artifacts::Wheel;
@@ -27,17 +28,27 @@ use url::Url;
 #[repr(transparent)]
 #[derive(Clone, Debug, Hash, Eq, PartialEq)]
 /// This is a wrapper around [`Specifiers`] that implements [`VersionSet`]
-pub(crate) struct PypiVersionSet(Option<VersionOrUrl>);
+pub(crate) struct PypiVersionSet((Option<VersionOrUrl>, bool));
 
 impl From<Option<VersionOrUrl>> for PypiVersionSet {
     fn from(value: Option<VersionOrUrl>) -> Self {
-        Self(value)
+        let allows_prerelease = value.as_ref().map_or_else(
+            || false,
+            |v| match v {
+                VersionOrUrl::VersionSpecifier(spec) => {
+                    spec.iter().any(|s| s.version().any_prerelease())
+                }
+                VersionOrUrl::Url(_) => false,
+            },
+        );
+
+        Self((value, allows_prerelease))
     }
 }
 
 impl Display for PypiVersionSet {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match &self.0 {
+        match &self.0 .0 {
             None => write!(f, "*"),
             Some(VersionOrUrl::Url(url)) => write!(f, "{url}"),
             Some(VersionOrUrl::VersionSpecifier(spec)) => write!(f, "{spec}"),
@@ -49,21 +60,33 @@ impl Display for PypiVersionSet {
 /// within the [`PypiVersionSet`] version set.
 #[derive(Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]
 pub(crate) enum PypiVersion {
-    Version(Version),
+    Version((Version, bool)),
     #[allow(dead_code)]
     Url(Url),
 }
 
+pub struct VersionMatchOptions {
+    pub allow_prerelease: bool,
+    // pub prerelease_only: HashMap<NormalizedPackageName, Version>,
+}
+
 impl VersionSet for PypiVersionSet {
     type V = PypiVersion;
+    type O = VersionMatchOptions;
 
-    fn contains(&self, v: &Self::V) -> bool {
-        match (self.0.as_ref(), v) {
+    fn contains(&self, v: &Self::V, options: &Self::O) -> bool {
+        let allow_prerelease = options.allow_prerelease || self.0 .1;
+
+        match (self.0 .0.as_ref(), v) {
             (Some(VersionOrUrl::Url(a)), PypiVersion::Url(b)) => a == b,
-            (Some(VersionOrUrl::VersionSpecifier(spec)), PypiVersion::Version(v)) => {
-                spec.contains(v)
+            (
+                Some(VersionOrUrl::VersionSpecifier(spec)),
+                PypiVersion::Version((v, only_prerelease)),
+            ) => spec.contains(v) && (allow_prerelease || *only_prerelease || !v.any_prerelease()),
+            (None, PypiVersion::Version((v, only_prerelease))) => {
+                allow_prerelease || *only_prerelease || !v.any_prerelease()
             }
-            (None, _) => true,
+            (None, PypiVersion::Url(_)) => true,
             _ => false,
         }
     }
@@ -72,7 +95,7 @@ impl VersionSet for PypiVersionSet {
 impl Display for PypiVersion {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            PypiVersion::Version(v) => write!(f, "{v}"),
+            PypiVersion::Version((v, _)) => write!(f, "{v}"),
             PypiVersion::Url(u) => write!(f, "{u}"),
         }
     }
@@ -118,6 +141,7 @@ impl Display for PypiPackageName {
 /// This is a [`DependencyProvider`] for PyPI packages
 pub(crate) struct PypiDependencyProvider<'db, 'i> {
     pub pool: Pool<PypiVersionSet, PypiPackageName>,
+    pub version_match_options_: VersionMatchOptions,
     package_db: &'db PackageDb,
     wheel_builder: WheelBuilder<'db, 'i>,
     markers: &'i MarkerEnvironment,
@@ -149,6 +173,12 @@ impl<'db, 'i> PypiDependencyProvider<'db, 'i> {
 
         Ok(Self {
             pool: Pool::new(),
+            version_match_options_: VersionMatchOptions {
+                allow_prerelease: matches!(
+                    options.pre_release_resolution,
+                    PreReleaseResolution::Allow
+                ),
+            },
             package_db,
             wheel_builder,
             markers,
@@ -163,6 +193,7 @@ impl<'db, 'i> PypiDependencyProvider<'db, 'i> {
     fn filter_candidates<'a>(
         &self,
         artifacts: &'a [ArtifactInfo],
+        _all_pre_release: bool,
     ) -> Result<Vec<&'a ArtifactInfo>, &'static str> {
         // Filter only artifacts we can work with
         if artifacts.is_empty() {
@@ -170,21 +201,31 @@ impl<'db, 'i> PypiDependencyProvider<'db, 'i> {
             return Err("there are no packages available");
         }
 
-        let mut artifacts = artifacts
-            .iter()
-            .filter(|a| a.filename.version().pre.is_none() && a.filename.version().dev.is_none())
-            .collect::<Vec<_>>();
-
-        if artifacts.is_empty() {
-            // Skip all prereleases
-            return Err("prereleases are not allowed");
-        }
-
+        let mut artifacts = artifacts.iter().collect::<Vec<_>>();
         // Filter yanked artifacts
         artifacts.retain(|a| !a.yanked.yanked);
+
         if artifacts.is_empty() {
             return Err("it is yanked");
         }
+
+        // Filter based on pre-release resolution
+        // let remove_pre_releases = match self.options.pre_release_resolution {
+        //     PreReleaseResolution::Disallow => true,
+        //     PreReleaseResolution::AllowIfNoOtherVersions => !all_pre_release,
+        //     PreReleaseResolution::Allow => false,
+        // };
+
+        // if remove_pre_releases {
+        //     artifacts.retain(|a| {
+        //         a.filename.version().pre.is_none() && a.filename.version().dev.is_none()
+        //     })
+        // }
+
+        // if artifacts.is_empty() {
+        //     // Skip all prereleases
+        //     return Err("prereleases are not allowed");
+        // }
 
         // This should keep only the wheels
         let mut wheels = if self.options.sdist_resolution.allow_wheels() {
@@ -364,6 +405,13 @@ impl<'p> DependencyProvider<PypiVersionSet, PypiPackageName>
         let mut candidates = Candidates::default();
         let locked_package = self.locked_packages.get(package_name.base());
         let favored_package = self.favored_packages.get(package_name.base());
+
+        let all_pre_release = artifacts
+            .iter()
+            .all(|(version, _)| version.pre.is_some() || version.dev.is_some());
+
+        println!("all_pre_release: {}", all_pre_release);
+
         for (version, artifacts) in artifacts.iter() {
             // Skip this version if a locked or favored version exists for this version. It will be
             // added below.
@@ -374,13 +422,14 @@ impl<'p> DependencyProvider<PypiVersionSet, PypiPackageName>
             }
 
             // Add the solvable
-            let solvable_id = self
-                .pool
-                .intern_solvable(name, PypiVersion::Version(version.clone()));
+            let solvable_id = self.pool.intern_solvable(
+                name,
+                PypiVersion::Version((version.clone(), all_pre_release)),
+            );
             candidates.candidates.push(solvable_id);
 
             // Determine the candidates
-            match self.filter_candidates(artifacts) {
+            match self.filter_candidates(artifacts, all_pre_release) {
                 Ok(artifacts) => {
                     self.cached_artifacts.insert(solvable_id, artifacts);
                 }
@@ -396,7 +445,7 @@ impl<'p> DependencyProvider<PypiVersionSet, PypiPackageName>
         if let Some(locked) = self.locked_packages.get(package_name.base()) {
             let solvable_id = self
                 .pool
-                .intern_solvable(name, PypiVersion::Version(locked.version.clone()));
+                .intern_solvable(name, PypiVersion::Version((locked.version.clone(), false)));
             candidates.candidates.push(solvable_id);
             candidates.locked = Some(solvable_id);
             self.cached_artifacts
@@ -407,7 +456,7 @@ impl<'p> DependencyProvider<PypiVersionSet, PypiPackageName>
         if let Some(favored) = self.favored_packages.get(package_name.base()) {
             let solvable_id = self
                 .pool
-                .intern_solvable(name, PypiVersion::Version(favored.version.clone()));
+                .intern_solvable(name, PypiVersion::Version((favored.version.clone(), false)));
             candidates.candidates.push(solvable_id);
             candidates.favored = Some(solvable_id);
             self.cached_artifacts
@@ -427,7 +476,7 @@ impl<'p> DependencyProvider<PypiVersionSet, PypiPackageName>
         tracing::info!(
             "obtaining dependency information from {}={}",
             package_name,
-            package_version
+            package_version.0
         );
 
         let mut dependencies = Dependencies::default();
@@ -441,7 +490,7 @@ impl<'p> DependencyProvider<PypiVersionSet, PypiPackageName>
                 .expect("base package not found while resolving extra");
             let specifiers = VersionSpecifiers::from_iter([VersionSpecifier::new(
                 Operator::ExactEqual,
-                package_version.clone(),
+                package_version.0.clone(),
                 false,
             )
             .expect("failed to construct equality version specifier")]);
@@ -474,7 +523,7 @@ impl<'p> DependencyProvider<PypiVersionSet, PypiPackageName>
         }) else {
             panic!(
                 "could not find metadata for any sdist or wheel for {} {}. The following artifacts are available:\n{}",
-                package_name, package_version, artifacts.iter().format_with("\n", |a, f| f(&format_args!("- {}", a.filename)))
+                package_name, package_version.0, artifacts.iter().format_with("\n", |a, f| f(&format_args!("- {}", a.filename)))
             );
         };
 
@@ -487,7 +536,7 @@ impl<'p> DependencyProvider<PypiVersionSet, PypiPackageName>
                     .intern_package_name(PypiPackageName::Extra(package_name.clone(), extra));
                 let specifiers = VersionSpecifiers::from_iter([VersionSpecifier::new(
                     Operator::ExactEqual,
-                    package_version.clone(),
+                    package_version.0.clone(),
                     false,
                 )
                 .expect("failed to construct equality version specifier")]);
@@ -543,5 +592,9 @@ impl<'p> DependencyProvider<PypiVersionSet, PypiPackageName>
         }
 
         dependencies
+    }
+
+    fn version_match_options(&self) -> &<PypiVersionSet as VersionSet>::O {
+        &self.version_match_options_
     }
 }

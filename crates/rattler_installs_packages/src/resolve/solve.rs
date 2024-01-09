@@ -126,6 +126,21 @@ pub enum SDistResolution {
     OnlySDists,
 }
 
+/// Defines how to pre-releases are handled during package resolution.
+#[derive(Default, Debug, Clone, Copy, Eq, PartialOrd, PartialEq)]
+pub enum PreReleaseResolution {
+    /// Don't allow pre-releases to be selected during resolution
+    Disallow,
+
+    /// Allow pre-releases to be selected during resolution but only if there are no other versions
+    /// available (default)
+    #[default]
+    AllowIfNoOtherVersions,
+
+    /// Allow pre-releases to be selected during resolution
+    Allow,
+}
+
 impl SDistResolution {
     /// Returns true if sdists are allowed to be selected during resolution
     pub fn allow_sdists(&self) -> bool {
@@ -153,6 +168,10 @@ pub struct ResolveOptions {
 
     /// Defines if we should inherit env variables during build process of wheel files
     pub clean_env: bool,
+
+    /// Defines whether pre-releases are allowed to be selected during resolution. By default
+    /// pre-releases are not allowed (only if there are no other versions available for a given dependency).
+    pub pre_release_resolution: PreReleaseResolution,
 }
 
 /// Resolves an environment that contains the given requirements and all dependencies of those
@@ -247,7 +266,7 @@ pub async fn resolve<'db>(
             .entry(name.base().clone())
             .or_insert_with(|| PinnedPackage {
                 name: name.base().clone(),
-                version: version.clone(),
+                version: version.0.clone(),
                 extras: Default::default(),
                 artifacts: provider
                     .cached_artifacts

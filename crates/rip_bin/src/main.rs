@@ -1,4 +1,5 @@
 use fs_err as fs;
+use rattler_installs_packages::resolve::PreReleaseResolution;
 use rip_bin::{global_multi_progress, IndicatifWriter};
 use std::collections::HashMap;
 use std::io::Write;
@@ -49,6 +50,10 @@ struct Args {
     #[arg(short = 'c', long)]
     /// Disable inheritance of env variables.
     clean_env: bool,
+
+    /// Prefer pre-releases over normal releases
+    #[clap(long)]
+    pre: bool,
 }
 
 #[derive(Parser)]
@@ -152,10 +157,17 @@ async fn actual_main() -> miette::Result<()> {
         None => PythonLocation::System,
     };
 
+    let pre_release_resolution = if args.pre {
+        PreReleaseResolution::Allow
+    } else {
+        PreReleaseResolution::AllowIfNoOtherVersions
+    };
+
     let resolve_opts = ResolveOptions {
         sdist_resolution: args.sdist_resolution.into(),
         python_location: python_location.clone(),
         clean_env: args.clean_env,
+        pre_release_resolution,
     };
 
     // Solve the environment
