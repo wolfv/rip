@@ -74,14 +74,14 @@ impl VersionSet for PypiVersionSet {
                     VersionOrUrl::Url(_) => false,
                 }
             });
-        println!("allow_prerelease: {} for {:?}", allow_prerelease, self.0.as_ref());
 
         match (self.0.as_ref(), v) {
             (Some(VersionOrUrl::Url(a)), PypiVersion::Url(b)) => a == b,
             (Some(VersionOrUrl::VersionSpecifier(spec)), PypiVersion::Version(v)) => {
-                spec.contains(v)
+                spec.contains(v) && (allow_prerelease || !v.any_prerelease())
             }
-            (None, _) => true,
+            (None, PypiVersion::Version(v)) => allow_prerelease || !v.any_prerelease(),
+            (None, PypiVersion::Url(_)) => true,
             _ => false,
         }
     }
