@@ -54,10 +54,28 @@ pub(crate) enum PypiVersion {
     Url(Url),
 }
 
+pub struct VersionMatchOptions {
+    pub allow_prerelease: bool,
+    // pub prerelease_only: HashMap<NormalizedPackageName, Version>,
+}
+
 impl VersionSet for PypiVersionSet {
     type V = PypiVersion;
+    type O = VersionMatchOptions;
 
-    fn contains(&self, v: &Self::V) -> bool {
+    fn contains(&self, v: &Self::V, options: &Self::O) -> bool {
+        let allow_prerelease = options.allow_prerelease || self.0.as_ref().map_or_else(
+            || false,
+            |v| {
+                match v {
+                    VersionOrUrl::VersionSpecifier(spec) => spec.iter().any(|s| {
+                        s.version().any_prerelease()
+                    }),
+                    VersionOrUrl::Url(_) => false,
+                }
+            });
+        println!("allow_prerelease: {} for {:?}", allow_prerelease, self.0.as_ref());
+
         match (self.0.as_ref(), v) {
             (Some(VersionOrUrl::Url(a)), PypiVersion::Url(b)) => a == b,
             (Some(VersionOrUrl::VersionSpecifier(spec)), PypiVersion::Version(v)) => {
@@ -118,6 +136,7 @@ impl Display for PypiPackageName {
 /// This is a [`DependencyProvider`] for PyPI packages
 pub(crate) struct PypiDependencyProvider<'db, 'i> {
     pub pool: Pool<PypiVersionSet, PypiPackageName>,
+    pub version_match_options_: VersionMatchOptions,
     package_db: &'db PackageDb,
     wheel_builder: WheelBuilder<'db, 'i>,
     markers: &'i MarkerEnvironment,
@@ -152,6 +171,9 @@ impl<'db, 'i> PypiDependencyProvider<'db, 'i> {
 
         Ok(Self {
             pool: Pool::new(),
+            version_match_options_: VersionMatchOptions {
+                allow_prerelease: matches!(options.pre_release_resolution, PreReleaseResolution::Allow),
+            },
             package_db,
             wheel_builder,
             markers,
@@ -183,22 +205,22 @@ impl<'db, 'i> PypiDependencyProvider<'db, 'i> {
         }
 
         // Filter based on pre-release resolution
-        let remove_pre_releases = match self.options.pre_release_resolution {
-            PreReleaseResolution::Disallow => true,
-            PreReleaseResolution::AllowIfNoOtherVersions => !all_pre_release,
-            PreReleaseResolution::Allow => false,
-        };
+        // let remove_pre_releases = match self.options.pre_release_resolution {
+        //     PreReleaseResolution::Disallow => true,
+        //     PreReleaseResolution::AllowIfNoOtherVersions => !all_pre_release,
+        //     PreReleaseResolution::Allow => false,
+        // };
 
-        if remove_pre_releases {
-            artifacts.retain(|a| {
-                a.filename.version().pre.is_none() && a.filename.version().dev.is_none()
-            })
-        }
+        // if remove_pre_releases {
+        //     artifacts.retain(|a| {
+        //         a.filename.version().pre.is_none() && a.filename.version().dev.is_none()
+        //     })
+        // }
 
-        if artifacts.is_empty() {
-            // Skip all prereleases
-            return Err("prereleases are not allowed");
-        }
+        // if artifacts.is_empty() {
+        //     // Skip all prereleases
+        //     return Err("prereleases are not allowed");
+        // }
 
         // This should keep only the wheels
         let mut wheels = if self.options.sdist_resolution.allow_wheels() {
@@ -383,6 +405,9 @@ impl<'p> DependencyProvider<PypiVersionSet, PypiPackageName>
             .iter()
             .all(|(version, _)| version.pre.is_some() || version.dev.is_some());
 
+        
+        println!("all_pre_release: {}", all_pre_release);
+
         for (version, artifacts) in artifacts.iter() {
             // Skip this version if a locked or favored version exists for this version. It will be
             // added below.
@@ -562,5 +587,9 @@ impl<'p> DependencyProvider<PypiVersionSet, PypiPackageName>
         }
 
         dependencies
+    }
+
+    fn version_match_options(&self) -> &<PypiVersionSet as VersionSet>::O {
+        &self.version_match_options_
     }
 }
