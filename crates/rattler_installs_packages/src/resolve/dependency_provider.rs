@@ -64,16 +64,16 @@ impl VersionSet for PypiVersionSet {
     type O = VersionMatchOptions;
 
     fn contains(&self, v: &Self::V, options: &Self::O) -> bool {
-        let allow_prerelease = options.allow_prerelease || self.0.as_ref().map_or_else(
-            || false,
-            |v| {
-                match v {
-                    VersionOrUrl::VersionSpecifier(spec) => spec.iter().any(|s| {
-                        s.version().any_prerelease()
-                    }),
+        let allow_prerelease = options.allow_prerelease
+            || self.0.as_ref().map_or_else(
+                || false,
+                |v| match v {
+                    VersionOrUrl::VersionSpecifier(spec) => {
+                        spec.iter().any(|s| s.version().any_prerelease())
+                    }
                     VersionOrUrl::Url(_) => false,
-                }
-            });
+                },
+            );
 
         match (self.0.as_ref(), v) {
             (Some(VersionOrUrl::Url(a)), PypiVersion::Url(b)) => a == b,
@@ -172,7 +172,10 @@ impl<'db, 'i> PypiDependencyProvider<'db, 'i> {
         Ok(Self {
             pool: Pool::new(),
             version_match_options_: VersionMatchOptions {
-                allow_prerelease: matches!(options.pre_release_resolution, PreReleaseResolution::Allow),
+                allow_prerelease: matches!(
+                    options.pre_release_resolution,
+                    PreReleaseResolution::Allow
+                ),
             },
             package_db,
             wheel_builder,
@@ -188,7 +191,7 @@ impl<'db, 'i> PypiDependencyProvider<'db, 'i> {
     fn filter_candidates<'a>(
         &self,
         artifacts: &'a [ArtifactInfo],
-        all_pre_release: bool,
+        _all_pre_release: bool,
     ) -> Result<Vec<&'a ArtifactInfo>, &'static str> {
         // Filter only artifacts we can work with
         if artifacts.is_empty() {
@@ -405,7 +408,6 @@ impl<'p> DependencyProvider<PypiVersionSet, PypiPackageName>
             .iter()
             .all(|(version, _)| version.pre.is_some() || version.dev.is_some());
 
-        
         println!("all_pre_release: {}", all_pre_release);
 
         for (version, artifacts) in artifacts.iter() {
