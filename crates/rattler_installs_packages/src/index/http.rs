@@ -321,12 +321,12 @@ fn verify_cache_bom_and_version<R: Read + Seek>(
 }
 
 /// Fill the cache with the
-async fn fill_cache_async(
+async fn fill_cache_async<S: Stream<Item = reqwest::Result<Bytes>> + Send + Unpin>(
     policy: &CachePolicy,
     url: &Url,
-    mut body: impl Stream<Item = reqwest::Result<Bytes>> + Send + Unpin,
+    mut body: S,
     handle: FileLock,
-) -> Result<impl Read + Seek, std::io::Error> {
+) -> Result<impl Read + Seek + use<S>, std::io::Error> {
     let cache_writer = handle.begin()?;
     let mut buf_cache_writer = BufWriter::new(cache_writer);
 

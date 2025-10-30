@@ -24,7 +24,7 @@ WheelCoreMetadata {
             epoch: 0,
             release: [
                 2,
-                1,
+                4,
             ],
             pre: None,
             post: None,
@@ -159,31 +159,16 @@ WheelCoreMetadata {
                 ),
             ),
             marker: Some(
-                And(
-                    [
-                        Expression(
-                            MarkerExpression {
-                                l_value: MarkerEnvVersion(
-                                    PythonVersion,
-                                ),
-                                operator: GreaterEqual,
-                                r_value: QuotedString(
-                                    "3.6",
-                                ),
-                            },
+                Expression(
+                    MarkerExpression {
+                        l_value: MarkerEnvVersion(
+                            PythonVersion,
                         ),
-                        Expression(
-                            MarkerExpression {
-                                l_value: MarkerEnvVersion(
-                                    PythonVersion,
-                                ),
-                                operator: LessThan,
-                                r_value: QuotedString(
-                                    "3.7",
-                                ),
-                            },
+                        operator: Equal,
+                        r_value: QuotedString(
+                            "3.6",
                         ),
-                    ],
+                    },
                 ),
             ),
         },

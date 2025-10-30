@@ -106,7 +106,7 @@ impl FileStore {
 
     /// Gets readable access to the data with the specified key. Returns `None` if no such key
     /// exists in the store.
-    pub async fn get<K: CacheKey>(&self, key: &K) -> Option<impl Read + Seek> {
+    pub async fn get<K: CacheKey>(&self, key: &K) -> Option<impl Read + Seek + use<K>> {
         if let Some(lock) = self.lock_if_exists(key).await {
             if let Some(reader) = lock.reader() {
                 return Some(reader.detach_unlocked());
