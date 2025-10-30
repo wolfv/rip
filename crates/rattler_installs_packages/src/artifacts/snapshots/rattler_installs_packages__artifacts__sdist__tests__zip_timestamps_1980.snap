@@ -8908,30 +8908,9 @@ Ok(
                 source: "tomli",
                 normalized: "tomli",
             },
-            version: Version {
-                epoch: 0,
-                release: [
-                    2,
-                    0,
-                    1,
-                ],
-                pre: None,
-                post: None,
-                dev: None,
-                local: None,
-            },
+            version: "2.0.1",
             metadata_version: MetadataVersion(
-                Version {
-                    epoch: 0,
-                    release: [
-                        2,
-                        4,
-                    ],
-                    pre: None,
-                    post: None,
-                    dev: None,
-                    local: None,
-                },
+                "2.4",
             ),
             requires_dist: [],
             requires_python: Some(
@@ -8939,17 +8918,7 @@ Ok(
                     [
                         VersionSpecifier {
                             operator: GreaterThanEqual,
-                            version: Version {
-                                epoch: 0,
-                                release: [
-                                    3,
-                                    7,
-                                ],
-                                pre: None,
-                                post: None,
-                                dev: None,
-                                local: None,
-                            },
+                            version: "3.7",
                         },
                     ],
                 ),

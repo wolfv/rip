@@ -7,7 +7,7 @@ use crate::{
     types::Version, types::VersionSpecifiers,
 };
 use once_cell::sync::Lazy;
-use pep440_rs::Pep440Error;
+use pep440_rs::{VersionParseError, VersionSpecifiersParseError};
 use pep508_rs::Requirement;
 use std::{collections::HashSet, str::FromStr};
 use thiserror::Error;
@@ -91,7 +91,7 @@ pub enum WheelCoreMetaDataError {
     InvalidVersion(String),
 
     #[error("invalid Requires-Python: {0}")]
-    InvalidRequiresPython(#[source] Pep440Error),
+    InvalidRequiresPython(#[source] VersionSpecifiersParseError),
 
     #[error("unsupported METADATA version {0}")]
     UnsupportedVersion(Version),
@@ -186,9 +186,9 @@ fn parse_common(
     let metadata_version = parsed
         .take("Metadata-Version")
         .map_err(|_| WheelCoreMetaDataError::MissingKey(String::from("Metadata-Version")))?;
-    let metadata_version: Version = metadata_version
-        .parse()
-        .map_err(WheelCoreMetaDataError::InvalidMetadataVersion)?;
+    let metadata_version: Version = metadata_version.parse().map_err(|e: VersionParseError| {
+        WheelCoreMetaDataError::InvalidMetadataVersion(e.to_string())
+    })?;
     if metadata_version >= *NEXT_MAJOR_METADATA_VERSION {
         return Err(WheelCoreMetaDataError::UnsupportedVersion(metadata_version));
     }
@@ -202,9 +202,9 @@ fn parse_common(
             .take("Name")
             .map_err(|_| WheelCoreMetaDataError::MissingKey(String::from("Name")))?
             .parse()?,
-        version_str
-            .parse()
-            .map_err(WheelCoreMetaDataError::InvalidVersion)?,
+        version_str.parse().map_err(|e: VersionParseError| {
+            WheelCoreMetaDataError::InvalidVersion(e.to_string())
+        })?,
         MetadataVersion(metadata_version),
         parsed,
     ))

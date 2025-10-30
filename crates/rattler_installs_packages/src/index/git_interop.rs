@@ -139,7 +139,6 @@ impl ParsedUrl {
     /// and return url without revision and the revision
     fn extract_revision_from_git_url(url: &str) -> Option<String> {
         // Split the string at '@' and take the second part
-        
 
         if url.contains('@') {
             let split: Vec<&str> = url.split('@').collect();
@@ -157,9 +156,10 @@ impl ParsedUrl {
         let subdirectory_fragment_re = Regex::new(r#"[#&]subdirectory=([^&]*)"#).unwrap();
 
         if let Some(captures) = subdirectory_fragment_re.captures(url)
-            && let Some(subdirectory) = captures.get(1) {
-                return Some(subdirectory.as_str().to_string());
-            }
+            && let Some(subdirectory) = captures.get(1)
+        {
+            return Some(subdirectory.as_str().to_string());
+        }
         None
     }
 
@@ -171,7 +171,6 @@ impl ParsedUrl {
         });
 
         // Remove everything after ".git"
-        
 
         url.chars().take(repo_index).collect()
     }

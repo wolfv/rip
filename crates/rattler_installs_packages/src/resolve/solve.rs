@@ -107,12 +107,12 @@ fn resolve_inner<'r>(
     for Requirement {
         name,
         version_or_url,
-        extras,
+        extras: req_extras,
         ..
     } in requirements
     {
-        let name = PackageName::from_str(name).expect("invalid package name");
-        let pypi_name = PypiPackageName::Base(name.clone().into());
+        let package_name = PackageName::from_str(name.as_ref()).expect("invalid package name");
+        let pypi_name = PypiPackageName::Base(package_name.clone().into());
         let dependency_package_name = pool.intern_package_name(pypi_name.clone());
         let version_set_id = pool.intern_version_set(
             dependency_package_name,
@@ -123,14 +123,18 @@ fn resolve_inner<'r>(
             requirement: ResolvoRequirement::Single(version_set_id),
         });
 
-        if let Some(VersionOrUrl::Url(url)) = version_or_url {
-            name_to_url.insert(pypi_name.base().clone(), url.clone().as_str().to_owned());
+        if let Some(VersionOrUrl::Url(url)) = &version_or_url {
+            if let Some(given) = url.given() {
+                name_to_url.insert(pypi_name.base().clone(), given.to_owned());
+            }
         }
 
-        for extra in extras.iter().flatten() {
-            let extra: Extra = extra.parse().expect("invalid extra");
-            let dependency_package_name = pool
-                .intern_package_name(PypiPackageName::Extra(name.clone().into(), extra.clone()));
+        for extra in req_extras {
+            let extra: Extra = extra.as_ref().parse().expect("invalid extra");
+            let dependency_package_name = pool.intern_package_name(PypiPackageName::Extra(
+                package_name.clone().into(),
+                extra.clone(),
+            ));
             let version_set_id = pool.intern_version_set(
                 dependency_package_name,
                 PypiVersionSet::from_spec(version_or_url.clone(), &options.pre_release_resolution),

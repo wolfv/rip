@@ -107,7 +107,7 @@ impl PypiVersionSet {
     /// Returns true if the given version is contained in this version set.
     pub fn contains(&self, v: &PypiVersion) -> bool {
         match (self.spec.as_ref(), v) {
-            (Some(VersionOrUrl::Url(a)), PypiVersion::Url(b)) => a == b,
+            (Some(VersionOrUrl::Url(a)), PypiVersion::Url(b)) => a.given() == Some(b.as_str()),
             (
                 Some(VersionOrUrl::VersionSpecifier(spec)),
                 PypiVersion::Version {

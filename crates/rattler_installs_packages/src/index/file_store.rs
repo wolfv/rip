@@ -108,9 +108,10 @@ impl FileStore {
     /// exists in the store.
     pub async fn get<K: CacheKey>(&self, key: &K) -> Option<impl Read + Seek + use<K>> {
         if let Some(lock) = self.lock_if_exists(key).await
-            && let Some(reader) = lock.reader() {
-                return Some(reader.detach_unlocked());
-            }
+            && let Some(reader) = lock.reader()
+        {
+            return Some(reader.detach_unlocked());
+        }
         None
     }
 

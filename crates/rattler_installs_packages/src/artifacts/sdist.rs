@@ -319,7 +319,7 @@ mod tests {
         assert_ron_snapshot!(build_system, @r###"
         BuildSystem(
           requires: [
-            "poetry-core >=1.0.0",
+            "poetry-core>=1.0.0",
           ],
           r#build-backend: Some("poetry.core.masonry.api"),
           r#backend-path: None,

@@ -68,13 +68,14 @@ pub fn find_distributions_in_directory(
     for entry in search_dir.read_dir()? {
         let entry = entry?;
         if entry.file_type()?.is_dir()
-            && let Some(dist) = analyze_distribution(entry.path())? {
-                result.push(Distribution {
-                    dist_info: pathdiff::diff_paths(&dist.dist_info, search_dir)
-                        .unwrap_or(dist.dist_info),
-                    ..dist
-                })
-            }
+            && let Some(dist) = analyze_distribution(entry.path())?
+        {
+            result.push(Distribution {
+                dist_info: pathdiff::diff_paths(&dist.dist_info, search_dir)
+                    .unwrap_or(dist.dist_info),
+                ..dist
+            })
+        }
     }
 
     Ok(result)

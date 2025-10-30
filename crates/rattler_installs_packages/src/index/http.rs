@@ -369,11 +369,7 @@ async fn fill_cache_async<S: Stream<Item = reqwest::Result<Bytes>> + Send + Unpi
     buf_cache_writer.seek(SeekFrom::Start(body_start)).unwrap();
 
     while let Some(bytes) = body.next().await {
-        buf_cache_writer.write_all(
-            bytes
-                .map_err(std::io::Error::other)?
-                .as_ref(),
-        )?;
+        buf_cache_writer.write_all(bytes.map_err(std::io::Error::other)?.as_ref())?;
     }
 
     let body_end = buf_cache_writer.stream_position()?;

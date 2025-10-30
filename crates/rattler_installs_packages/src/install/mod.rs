@@ -278,21 +278,19 @@ pub fn install_wheel(
 
         // If the file is a python file we need to compile it to bytecode
         if let Some(bytecode_compiler) = options.byte_code_compiler.as_ref()
-            && destination.extension() == Some(OsStr::new("py")) {
-                let pyc_tx = pyc_tx.clone();
-                let cloned_destination = destination.clone();
-                bytecode_compiler
-                    .compile(&destination, move |result| {
-                        // Ignore any error that might occur due to the receiver being closed.
-                        let _ = pyc_tx.send((cloned_destination, result));
-                    })
-                    .map_err(|err| {
-                        InstallError::ByteCodeCompilationFailed(
-                            destination.display().to_string(),
-                            err,
-                        )
-                    })?;
-            }
+            && destination.extension() == Some(OsStr::new("py"))
+        {
+            let pyc_tx = pyc_tx.clone();
+            let cloned_destination = destination.clone();
+            bytecode_compiler
+                .compile(&destination, move |result| {
+                    // Ignore any error that might occur due to the receiver being closed.
+                    let _ = pyc_tx.send((cloned_destination, result));
+                })
+                .map_err(|err| {
+                    InstallError::ByteCodeCompilationFailed(destination.display().to_string(), err)
+                })?;
+        }
 
         // Make sure the hash matches with what we expect
         if let Some(encoded_hash) = encoded_hash {

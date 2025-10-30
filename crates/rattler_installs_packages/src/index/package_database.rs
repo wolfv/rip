@@ -765,9 +765,10 @@ async fn fetch_simple_api(
         Ok(response) => response,
         Err(err) => {
             if let HttpRequestError::HttpError(err) = &err
-                && err.status() == Some(StatusCode::NOT_FOUND) {
-                    return Ok(None);
-                }
+                && err.status() == Some(StatusCode::NOT_FOUND)
+            {
+                return Ok(None);
+            }
             return Err(err.into());
         }
     };
@@ -964,17 +965,7 @@ mod test {
         assert_debug_snapshot!(test_package_result.keys(), @r###"
         [
             Version {
-                version: Version {
-                    epoch: 0,
-                    release: [
-                        1,
-                        0,
-                    ],
-                    pre: None,
-                    post: None,
-                    dev: None,
-                    local: None,
-                },
+                version: "1.0",
                 package_allows_prerelease: false,
             },
         ]

@@ -16,8 +16,8 @@ use elsa::FrozenMap;
 use itertools::Itertools;
 use miette::{Diagnostic, MietteDiagnostic};
 use parking_lot::Mutex;
-use pep440_rs::{Operator, VersionSpecifier, VersionSpecifiers};
-use pep508_rs::{MarkerEnvironment, Requirement, VersionOrUrl};
+use pep440_rs::{VersionSpecifier, VersionSpecifiers};
+use pep508_rs::{ExtraName, MarkerEnvironment, Requirement, VerbatimUrl, VersionOrUrl};
 use resolvo::{
     Candidates, ConditionalRequirement, Dependencies, DependencyProvider, KnownDependencies,
     NameId, Requirement as ResolvoRequirement, SolvableId, SolverCache, StringId, VersionSetId,
@@ -501,11 +501,12 @@ impl DependencyProvider for &PypiDependencyProvider {
             let specifiers = match package_version {
                 PypiVersion::Version { version, .. } => {
                     VersionOrUrl::VersionSpecifier(VersionSpecifiers::from_iter([
-                        VersionSpecifier::new(Operator::ExactEqual, version.clone(), false)
-                            .expect("failed to construct equality version specifier"),
+                        VersionSpecifier::equals_version(version.clone()),
                     ]))
                 }
-                PypiVersion::Url(url_version) => VersionOrUrl::Url(url_version.clone()),
+                PypiVersion::Url(url_version) => {
+                    VersionOrUrl::Url(VerbatimUrl::from_url(url_version.clone()))
+                }
             };
 
             let version_set_id = self.pool.intern_version_set(
@@ -616,11 +617,12 @@ impl DependencyProvider for &PypiDependencyProvider {
                 let specifiers = match package_version {
                     PypiVersion::Version { version, .. } => {
                         VersionOrUrl::VersionSpecifier(VersionSpecifiers::from_iter([
-                            VersionSpecifier::new(Operator::ExactEqual, version.clone(), false)
-                                .expect("failed to construct equality version specifier"),
+                            VersionSpecifier::equals_version(version.clone()),
                         ]))
                     }
-                    PypiVersion::Url(url_version) => VersionOrUrl::Url(url_version.clone()),
+                    PypiVersion::Url(url_version) => {
+                        VersionOrUrl::Url(VerbatimUrl::from_url(url_version.clone()))
+                    }
                 };
                 let version_set_id = self.pool.intern_version_set(
                     extra_name_id,
@@ -633,29 +635,31 @@ impl DependencyProvider for &PypiDependencyProvider {
             }
         }
 
-        let extras = package_name
+        let extras: Vec<ExtraName> = package_name
             .extra()
             .into_iter()
-            .map(|e| e.as_str())
-            .collect::<Vec<_>>();
+            .map(|e| ExtraName::new(e.as_str().to_string()).unwrap())
+            .collect();
         for requirement in metadata.requires_dist {
             // Evaluate environment markers
-            if let Some(markers) = requirement.marker.as_ref()
-                && !markers.evaluate(&self.markers, &extras) {
-                    continue;
-                }
+            if !requirement
+                .marker
+                .evaluate(&self.markers, extras.as_slice())
+            {
+                continue;
+            }
 
             // Add the dependency to the pool
             let Requirement {
                 name,
                 version_or_url,
-                extras,
+                extras: req_extras,
                 ..
             } = requirement;
-            let name = PackageName::from_str(&name).expect("invalid package name");
+            let package_name = PackageName::from_str(name.as_ref()).expect("invalid package name");
             let dependency_name_id = self
                 .pool
-                .intern_package_name(PypiPackageName::Base(name.clone().into()));
+                .intern_package_name(PypiPackageName::Base(package_name.clone().into()));
 
             let version_set_id = self.pool.intern_version_set(
                 dependency_name_id,
@@ -666,8 +670,10 @@ impl DependencyProvider for &PypiDependencyProvider {
             );
 
             if let Some(VersionOrUrl::Url(url)) = version_or_url.clone() {
-                self.name_to_url
-                    .insert(name.clone().into(), url.clone().as_str().to_owned());
+                if let Some(given) = url.given() {
+                    self.name_to_url
+                        .insert(package_name.clone().into(), given.to_owned());
+                }
             }
 
             dependencies.requirements.push(ConditionalRequirement {
@@ -676,11 +682,12 @@ impl DependencyProvider for &PypiDependencyProvider {
             });
 
             // Add a unique package for each extra/optional dependency
-            for extra in extras.into_iter().flatten() {
-                let extra = Extra::from_str(&extra).expect("invalid extra name");
-                let dependency_name_id = self
-                    .pool
-                    .intern_package_name(PypiPackageName::Extra(name.clone().into(), extra));
+            for extra in req_extras {
+                let extra = Extra::from_str(extra.as_ref()).expect("invalid extra name");
+                let dependency_name_id = self.pool.intern_package_name(PypiPackageName::Extra(
+                    package_name.clone().into(),
+                    extra,
+                ));
                 let version_set_id = self.pool.intern_version_set(
                     dependency_name_id,
                     PypiVersionSet::from_spec(

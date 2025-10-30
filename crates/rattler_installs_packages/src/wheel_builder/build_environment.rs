@@ -8,7 +8,7 @@ use crate::wheel_builder::{WheelBuildError, WheelBuilder};
 use fs_err as fs;
 use fs_err::read_dir;
 use parking_lot::RwLock;
-use pep508_rs::Requirement;
+use pep508_rs::{MarkerTree, PackageName, Requirement};
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsString;
 
@@ -319,9 +319,7 @@ impl BuildEnvironment {
                 std::env::join_paths(paths.iter()).map_err(|e| {
                     WheelBuildError::CouldNotRunCommand(
                         stage.into(),
-                        std::io::Error::other(
-                            format!("could not setup env path: {}", e),
-                        ),
+                        std::io::Error::other(format!("could not setup env path: {}", e)),
                     )
                 })?
             }
@@ -356,16 +354,18 @@ impl BuildEnvironment {
         pyproject_toml::BuildSystem {
             requires: vec![
                 Requirement {
-                    name: "setuptools".into(),
-                    extras: None,
-                    marker: None,
+                    name: PackageName::new("setuptools".to_string()).unwrap(),
+                    extras: Vec::new(),
+                    marker: MarkerTree::default(),
                     version_or_url: None,
+                    origin: None,
                 },
                 Requirement {
-                    name: "wheel".into(),
-                    extras: None,
-                    marker: None,
+                    name: PackageName::new("wheel".to_string()).unwrap(),
+                    extras: Vec::new(),
+                    marker: MarkerTree::default(),
                     version_or_url: None,
+                    origin: None,
                 },
             ],
             build_backend: Some("setuptools.build_meta:__legacy__".into()),
