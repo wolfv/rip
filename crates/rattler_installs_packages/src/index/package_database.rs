@@ -18,13 +18,13 @@ use crate::{
 use async_http_range_reader::{AsyncHttpRangeReader, CheckSupportMethod};
 use async_recursion::async_recursion;
 use elsa::sync::FrozenMap;
-use futures::{pin_mut, stream, StreamExt};
+use futures::{StreamExt, pin_mut, stream};
 use indexmap::IndexMap;
 use miette::{self, Diagnostic, IntoDiagnostic};
-use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
 use reqwest::Method;
+use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderValue};
 
-use reqwest::{header::CACHE_CONTROL, StatusCode};
+use reqwest::{StatusCode, header::CACHE_CONTROL};
 use reqwest_middleware::ClientWithMiddleware;
 use std::borrow::Borrow;
 
@@ -648,7 +648,9 @@ impl PackageDb {
                 return Ok(Some(metadata));
             }
             Err(err) => {
-                tracing::warn!("failed to sparsely read wheel file: {err}, falling back to downloading the whole file");
+                tracing::warn!(
+                    "failed to sparsely read wheel file: {err}, falling back to downloading the whole file"
+                );
             }
         }
 
@@ -762,11 +764,10 @@ async fn fetch_simple_api(
     {
         Ok(response) => response,
         Err(err) => {
-            if let HttpRequestError::HttpError(err) = &err {
-                if err.status() == Some(StatusCode::NOT_FOUND) {
+            if let HttpRequestError::HttpError(err) = &err
+                && err.status() == Some(StatusCode::NOT_FOUND) {
                     return Ok(None);
                 }
-            }
             return Err(err.into());
         }
     };
@@ -810,9 +811,9 @@ mod test {
     use tokio::task::JoinHandle;
 
     use crate::index::package_sources::PackageSourcesBuilder;
+    use axum::Router;
     use axum::response::{Html, IntoResponse};
     use axum::routing::get;
-    use axum::Router;
     use insta::assert_debug_snapshot;
     use std::future::IntoFuture;
     use std::net::SocketAddr;

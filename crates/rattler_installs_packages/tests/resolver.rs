@@ -5,8 +5,8 @@ use rattler_installs_packages::resolve::solve_options::{ResolveOptions, SDistRes
 use rattler_installs_packages::{
     index::PackageDb,
     python_env::{WheelTag, WheelTags},
-    resolve::resolve,
     resolve::PinnedPackage,
+    resolve::resolve,
     types::NormalizedPackageName,
 };
 use std::{collections::HashMap, path::Path, str::FromStr, sync::OnceLock};

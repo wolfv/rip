@@ -1,7 +1,7 @@
 use super::{
+    PypiVersion, PypiVersionSet,
     pypi_version_types::PypiPackageName,
     solve_options::{PreReleaseResolution, ResolveOptions, SDistResolution},
-    PypiVersion, PypiVersionSet,
 };
 use crate::{
     artifacts::{SDist, Wheel},
@@ -19,9 +19,9 @@ use parking_lot::Mutex;
 use pep440_rs::{Operator, VersionSpecifier, VersionSpecifiers};
 use pep508_rs::{MarkerEnvironment, Requirement, VersionOrUrl};
 use resolvo::{
+    Candidates, ConditionalRequirement, Dependencies, DependencyProvider, KnownDependencies,
+    NameId, Requirement as ResolvoRequirement, SolvableId, SolverCache, StringId, VersionSetId,
     utils::Pool,
-    Candidates, ConditionalRequirement, Dependencies, DependencyProvider, KnownDependencies, NameId,
-    Requirement as ResolvoRequirement, SolvableId, SolverCache, StringId, VersionSetId,
 };
 use std::{any::Any, borrow::Borrow, cmp::Ordering, rc::Rc, str::FromStr, sync::Arc};
 use thiserror::Error;
@@ -170,7 +170,9 @@ impl PypiDependencyProvider {
             }
 
             if wheels.is_empty() && sdists.is_empty() {
-                return Err("none of the artifacts are compatible with the Python interpreter or glibc version and there are no supported sdists");
+                return Err(
+                    "none of the artifacts are compatible with the Python interpreter or glibc version and there are no supported sdists",
+                );
             }
         }
 
@@ -207,7 +209,9 @@ impl PypiDependencyProvider {
 
 #[derive(Debug, Error, Diagnostic, Clone)]
 pub(crate) enum MetadataError {
-    #[error("Extraction of metadata in case of wheels or building in case of sdists returned no results for following artifacts:\n{0}")]
+    #[error(
+        "Extraction of metadata in case of wheels or building in case of sdists returned no results for following artifacts:\n{0}"
+    )]
     NoMetadata(String),
 
     #[error("No metadata could be extracted for the following available artifacts:\n{artifacts}")]
@@ -218,7 +222,7 @@ pub(crate) enum MetadataError {
     },
 }
 
-impl<'p> resolvo::Interner for &'p PypiDependencyProvider {
+impl resolvo::Interner for &PypiDependencyProvider {
     fn display_solvable(&self, solvable: SolvableId) -> impl std::fmt::Display + '_ {
         let solvable = self.pool.resolve_solvable(solvable);
         let name = self.pool.resolve_package_name(solvable.name);
@@ -260,7 +264,7 @@ impl<'p> resolvo::Interner for &'p PypiDependencyProvider {
     }
 }
 
-impl<'p> DependencyProvider for &'p PypiDependencyProvider {
+impl DependencyProvider for &PypiDependencyProvider {
     async fn filter_candidates(
         &self,
         candidates: &[SolvableId],
@@ -274,11 +278,7 @@ impl<'p> DependencyProvider for &'p PypiDependencyProvider {
             .filter(|&candidate| {
                 let solvable = self.pool.resolve_solvable(candidate);
                 let contains = version_set.contains(&solvable.record);
-                if inverse {
-                    !contains
-                } else {
-                    contains
-                }
+                if inverse { !contains } else { contains }
             })
             .collect()
     }
@@ -291,11 +291,7 @@ impl<'p> DependencyProvider for &'p PypiDependencyProvider {
             .map(|s| Box::new(s.clone()) as Box<dyn Any>)
     }
 
-    async fn sort_candidates(
-        &self,
-        _: &SolverCache<Self>,
-        solvables: &mut [SolvableId],
-    ) {
+    async fn sort_candidates(&self, _: &SolverCache<Self>, solvables: &mut [SolvableId]) {
         solvables.sort_by(|&a, &b| {
             // First sort the solvables based on the artifact types we have available for them and
             // whether some of them are preferred. If one artifact type is preferred over another
@@ -644,11 +640,10 @@ impl<'p> DependencyProvider for &'p PypiDependencyProvider {
             .collect::<Vec<_>>();
         for requirement in metadata.requires_dist {
             // Evaluate environment markers
-            if let Some(markers) = requirement.marker.as_ref() {
-                if !markers.evaluate(&self.markers, &extras) {
+            if let Some(markers) = requirement.marker.as_ref()
+                && !markers.evaluate(&self.markers, &extras) {
                     continue;
                 }
-            }
 
             // Add the dependency to the pool
             let Requirement {

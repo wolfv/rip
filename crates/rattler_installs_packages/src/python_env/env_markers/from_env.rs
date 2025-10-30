@@ -1,5 +1,5 @@
 use super::Pep508EnvMakers;
-use crate::python_env::{system_python_executable, FindPythonError};
+use crate::python_env::{FindPythonError, system_python_executable};
 use std::io;
 use std::io::ErrorKind;
 use std::path::Path;
@@ -44,7 +44,7 @@ impl Pep508EnvMakers {
             Err(e) if e.kind() == ErrorKind::NotFound => {
                 return Err(FromPythonError::CouldNotFindPythonExecutable(
                     FindPythonError::NotFound,
-                ))
+                ));
             }
             Err(e) => return Err(FromPythonError::FailedToExecute(e)),
             Ok(output) => output,

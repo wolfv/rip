@@ -60,13 +60,12 @@ pub fn uninstall_distribution(
     let mut directories = HashSet::new();
     for entry in record.into_iter() {
         let entry_path = site_packages_dir.join(&entry.path);
-        if let Err(e) = fs::remove_file(&entry_path) {
-            if e.kind() != std::io::ErrorKind::NotFound {
+        if let Err(e) = fs::remove_file(&entry_path)
+            && e.kind() != std::io::ErrorKind::NotFound {
                 return Err(UninstallDistributionError::FailedToDeleteFile(
                     entry.path, e,
                 ));
             }
-        }
         if let Some(parent) = entry_path.parent() {
             directories.insert(parent.to_path_buf());
         }

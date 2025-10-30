@@ -4,7 +4,7 @@ use std::{
     env,
     io::{Cursor, Write},
 };
-use zip::{write::FileOptions, ZipWriter};
+use zip::{ZipWriter, write::FileOptions};
 
 /// Defines the type of script to run. This is either a GUI application or a console application.
 /// When running a console application a terminal is expected. When running a GUI application the

@@ -55,11 +55,10 @@ struct WheelKeyMetadata {
     integrity: String,
 }
 
-impl ToString for WheelCacheKey {
-    /// Get WheelKey string representation without suffix
-    fn to_string(&self) -> String {
+impl std::fmt::Display for WheelCacheKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut parts = self.0.split(':');
-        parts.nth(1).unwrap_or_default().to_owned()
+        write!(f, "{}", parts.nth(1).unwrap_or_default())
     }
 }
 

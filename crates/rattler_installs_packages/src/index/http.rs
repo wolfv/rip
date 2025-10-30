@@ -7,7 +7,7 @@ use futures::{Stream, StreamExt, TryStreamExt};
 use http_cache_semantics::{AfterResponse, BeforeRequest, CachePolicy};
 use miette::Diagnostic;
 use reqwest::header::{ACCEPT, CACHE_CONTROL};
-use reqwest::{header::HeaderMap, Method};
+use reqwest::{Method, header::HeaderMap};
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{Deserialize, Serialize};
 use std::io;
@@ -371,7 +371,7 @@ async fn fill_cache_async<S: Stream<Item = reqwest::Result<Bytes>> + Send + Unpi
     while let Some(bytes) = body.next().await {
         buf_cache_writer.write_all(
             bytes
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?
+                .map_err(std::io::Error::other)?
                 .as_ref(),
         )?;
     }
@@ -424,7 +424,7 @@ fn body_to_streaming_or_local(
 ) -> StreamingOrLocal {
     StreamingOrLocal::Streaming(Box::new(
         stream
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
+            .map_err(std::io::Error::other)
             .into_async_read()
             .compat(),
     ))
@@ -434,16 +434,16 @@ fn body_to_streaming_or_local(
 mod tests {
     use crate::index::{
         file_store::FileStore,
-        http::{write_cache_bom_and_metadata, CACHE_BOM, CURRENT_VERSION},
+        http::{CACHE_BOM, CURRENT_VERSION, write_cache_bom_and_metadata},
     };
-    use http::{header::CACHE_CONTROL, HeaderMap, HeaderValue, Method};
+    use http::{HeaderMap, HeaderValue, Method, header::CACHE_CONTROL};
     use reqwest::Client;
     use reqwest_middleware::ClientWithMiddleware;
 
     use std::{fs, io::BufWriter, sync::Arc};
     use tempfile::TempDir;
 
-    use super::{key_for_request, read_cache, CacheMode, Http};
+    use super::{CacheMode, Http, key_for_request, read_cache};
 
     fn get_http_client() -> (Arc<Http>, TempDir) {
         let tempdir = tempfile::tempdir().unwrap();

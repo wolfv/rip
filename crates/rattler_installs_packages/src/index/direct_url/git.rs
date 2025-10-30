@@ -1,4 +1,4 @@
-use crate::index::git_interop::{git_clone, GitSource, ParsedUrl};
+use crate::index::git_interop::{GitSource, ParsedUrl, git_clone};
 use crate::index::package_database::DirectUrlArtifactResponse;
 use crate::resolve::PypiVersion;
 use crate::types::{
@@ -8,7 +8,7 @@ use crate::types::{
 use crate::wheel_builder::WheelBuilder;
 use indexmap::IndexMap;
 use miette::IntoDiagnostic;
-use rattler_digest::{compute_bytes_digest, Sha256};
+use rattler_digest::{Sha256, compute_bytes_digest};
 use std::str::FromStr;
 use std::sync::Arc;
 use url::Url;

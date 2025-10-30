@@ -410,11 +410,10 @@ fn split_into_filename_rest<'a>(
         if char == '-' {
             let (name, rest) = (&s[..idx], &s[idx + 1..]);
             let parsed = name.parse::<NormalizedPackageName>();
-            if let Ok(parsed) = parsed {
-                if parsed == *normalized_package_name {
+            if let Ok(parsed) = parsed
+                && parsed == *normalized_package_name {
                     return Some((name, rest));
                 }
-            }
         }
     }
     None

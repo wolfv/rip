@@ -1,6 +1,6 @@
 use crate::artifacts::{SDist, Wheel};
 use crate::index::http::Http;
-use crate::index::{parse_hash, CacheMode};
+use crate::index::{CacheMode, parse_hash};
 use crate::resolve::PypiVersion;
 use crate::types::{
     ArtifactFromBytes, ArtifactHashes, ArtifactInfo, ArtifactType, DirectUrlHashes, DirectUrlJson,
@@ -13,8 +13,8 @@ use indexmap::IndexMap;
 use miette::IntoDiagnostic;
 use pep440_rs::Version;
 use rattler_digest::Sha256;
-use reqwest::header::HeaderMap;
 use reqwest::Method;
+use reqwest::header::HeaderMap;
 use std::str::FromStr;
 use std::sync::Arc;
 use url::Url;

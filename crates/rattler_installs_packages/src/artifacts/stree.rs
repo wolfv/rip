@@ -19,7 +19,7 @@ pub struct STree {
 
 impl STree {
     /// Get a lock on the inner data
-    pub fn lock_data(&self) -> parking_lot::MutexGuard<PathBuf> {
+    pub fn lock_data(&self) -> parking_lot::MutexGuard<'_, PathBuf> {
         self.location.lock()
     }
 

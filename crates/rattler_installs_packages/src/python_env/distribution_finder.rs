@@ -67,15 +67,14 @@ pub fn find_distributions_in_directory(
     let mut result = Vec::new();
     for entry in search_dir.read_dir()? {
         let entry = entry?;
-        if entry.file_type()?.is_dir() {
-            if let Some(dist) = analyze_distribution(entry.path())? {
+        if entry.file_type()?.is_dir()
+            && let Some(dist) = analyze_distribution(entry.path())? {
                 result.push(Distribution {
                     dist_info: pathdiff::diff_paths(&dist.dist_info, search_dir)
                         .unwrap_or(dist.dist_info),
                     ..dist
                 })
             }
-        }
     }
 
     Ok(result)

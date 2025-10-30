@@ -2,7 +2,7 @@ use crate::install::InstallWheelOptions;
 use crate::types::ArtifactFromSource;
 
 use crate::python_env::{PythonLocation, VEnv};
-use crate::resolve::{resolve, PinnedPackage};
+use crate::resolve::{PinnedPackage, resolve};
 use crate::utils::normalize_path;
 use crate::wheel_builder::{WheelBuildError, WheelBuilder};
 use fs_err as fs;
@@ -32,7 +32,7 @@ impl DeleteOrPersist {
         if let Self::Delete(temp_dir) = self {
             // This operation makes sure that the tempdir is not deleted
             // when the BuildEnvironment is dropped
-            Self::Persist(temp_dir.into_path())
+            Self::Persist(temp_dir.keep())
         } else {
             self
         }
@@ -319,8 +319,7 @@ impl BuildEnvironment {
                 std::env::join_paths(paths.iter()).map_err(|e| {
                     WheelBuildError::CouldNotRunCommand(
                         stage.into(),
-                        std::io::Error::new(
-                            std::io::ErrorKind::Other,
+                        std::io::Error::other(
                             format!("could not setup env path: {}", e),
                         ),
                     )

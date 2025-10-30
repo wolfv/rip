@@ -18,7 +18,7 @@ use std::{
     str::FromStr,
 };
 use thiserror::Error;
-use zip::{result::ZipError, ZipArchive};
+use zip::{ZipArchive, result::ZipError};
 
 /// A wheel file (`.whl`) in its archived form that is stored somewhere on disk.
 pub struct Wheel {

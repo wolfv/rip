@@ -378,8 +378,8 @@ mod tests {
     use crate::index::{PackageDb, PackageSourcesBuilder};
     use crate::python_env::{Pep508EnvMakers, PythonInterpreterVersion};
     use crate::resolve::solve_options::{OnWheelBuildFailure, ResolveOptions};
-    use crate::wheel_builder::wheel_cache::WheelCacheKey;
     use crate::wheel_builder::WheelBuilder;
+    use crate::wheel_builder::wheel_cache::WheelCacheKey;
     use futures::future::TryJoinAll;
     use reqwest::Client;
     use reqwest_middleware::ClientWithMiddleware;
@@ -442,12 +442,14 @@ mod tests {
         // No one will be using 1.0.0, I reckon
         let older_python = PythonInterpreterVersion::new(1, 0, 0);
         let key = WheelCacheKey::from_sdist(&sdist, &older_python).unwrap();
-        assert!(wheel_builder
-            .package_db
-            .local_wheel_cache()
-            .wheel_for_key(&key)
-            .unwrap()
-            .is_none());
+        assert!(
+            wheel_builder
+                .package_db
+                .local_wheel_cache()
+                .wheel_for_key(&key)
+                .unwrap()
+                .is_none()
+        );
     }
 
     #[tokio::test(flavor = "multi_thread")]

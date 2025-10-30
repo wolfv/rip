@@ -5,7 +5,7 @@ use std::{
     io::{self, BufRead, BufReader, Write},
     path::{Path, PathBuf},
     process::{Command, Stdio},
-    sync::mpsc::{channel, Sender},
+    sync::mpsc::{Sender, channel},
 };
 use tempfile::NamedTempFile;
 use thiserror::Error;

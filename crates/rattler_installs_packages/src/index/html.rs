@@ -3,10 +3,10 @@ use std::str::FromStr;
 use std::{borrow::Borrow, default::Default};
 
 use crate::{types::ArtifactHashes, types::ArtifactName, types::NormalizedPackageName};
-use miette::{miette, IntoDiagnostic};
+use miette::{IntoDiagnostic, miette};
 use pep440_rs::VersionSpecifiers;
 
-use rattler_digest::{parse_digest_from_hex, Sha256};
+use rattler_digest::{Sha256, parse_digest_from_hex};
 
 use tl::HTMLTag;
 use url::Url;

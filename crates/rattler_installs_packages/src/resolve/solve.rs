@@ -9,8 +9,8 @@ use elsa::FrozenMap;
 use pep440_rs::Version;
 use pep508_rs::{MarkerEnvironment, Requirement, VersionOrUrl};
 use resolvo::{
-    utils::Pool, ConditionalRequirement, Problem, Requirement as ResolvoRequirement, Solver,
-    UnsolvableOrCancelled,
+    ConditionalRequirement, Problem, Requirement as ResolvoRequirement, Solver,
+    UnsolvableOrCancelled, utils::Pool,
 };
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -162,10 +162,7 @@ fn resolve_inner<'r>(
             return match e {
                 UnsolvableOrCancelled::Unsolvable(problem) => Err(miette::miette!(
                     "{}",
-                    problem
-                        .display_user_friendly(&solver)
-                        .to_string()
-                        .trim()
+                    problem.display_user_friendly(&solver).to_string().trim()
                 )),
                 UnsolvableOrCancelled::Cancelled(e) => {
                     let e = e.downcast::<crate::resolve::dependency_provider::MetadataError>().expect("invalid cancellation error message, expected a MetadataError, this indicates an error in the code");
