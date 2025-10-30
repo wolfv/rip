@@ -185,7 +185,7 @@ pub fn install_wheel(
         let mut zip_entry = archive
             .by_index(index)
             .map_err(|e| InstallError::from_zip_error(format!("<index {index}>"), e))?;
-        let Some(relative_path) = zip_entry.enclosed_name().map(ToOwned::to_owned) else {
+        let Some(relative_path) = zip_entry.enclosed_name() else {
             // Skip invalid paths
             continue;
         };
@@ -196,7 +196,7 @@ pub fn install_wheel(
         // > 6. RECORD.jws is used for digital signatures. It is not mentioned in RECORD.
         // > 7. RECORD.p7s is allowed as a courtesy to anyone who would prefer to use S/MIME
         // >    signatures to secure their wheel files. It is not mentioned in RECORD.
-        if relative_path == record_relative_path
+        if relative_path == *record_relative_path
             || relative_path == record_relative_path.with_extension("jws")
             || relative_path == record_relative_path.with_extension("p7s")
         {

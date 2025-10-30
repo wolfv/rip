@@ -4,7 +4,7 @@
 use crate::types::ArtifactHashes;
 use crate::utils::retry_interrupted;
 use fs_err as fs;
-use fs4::FileExt;
+use fs4::fs_std::FileExt;
 use std::{
     io,
     io::{Read, Seek, SeekFrom, Write},

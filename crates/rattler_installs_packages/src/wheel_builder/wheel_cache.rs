@@ -205,7 +205,7 @@ mod tests {
 
     #[test]
     pub fn save_retrieve_wheel() {
-        let cache = WheelCache::new(tempfile::tempdir().unwrap().into_path());
+        let cache = WheelCache::new(tempfile::tempdir().unwrap().keep());
 
         // Load the wheel file
         let path = Path::new(env!("CARGO_MANIFEST_DIR"))

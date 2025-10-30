@@ -87,7 +87,7 @@ impl SDist {
                 for i in 0..archive.len() {
                     let mut file = archive.by_index(i)?;
                     if let Some(file_path) = file.enclosed_name() {
-                        if skip_first_component(file_path) == name.as_ref() {
+                        if skip_first_component(&file_path) == name.as_ref() {
                             let mut bytes = Vec::new();
                             file.read_to_end(&mut bytes)?;
                             return Ok(Some(bytes));

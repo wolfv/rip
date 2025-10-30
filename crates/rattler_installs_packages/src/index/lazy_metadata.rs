@@ -2,6 +2,7 @@ use crate::artifacts::wheel::{WheelVitalsError, find_dist_info_metadata};
 use crate::types::{WheelCoreMetadata, WheelFilename};
 use async_http_range_reader::AsyncHttpRangeReader;
 use async_zip::base::read::seek::ZipFileReader;
+use tokio::io::BufReader;
 use tokio_util::compat::TokioAsyncReadCompatExt;
 
 /// Reads the metadata from a wheel by only reading parts of the wheel zip.
@@ -23,7 +24,8 @@ pub(crate) async fn lazy_read_wheel_metadata(
         .await;
 
     // Construct a zip reader to uses the stream.
-    let mut reader = ZipFileReader::new(stream.compat())
+    // Wrap in BufReader since async_zip now requires AsyncBufRead
+    let mut reader = ZipFileReader::new(BufReader::new(stream).compat())
         .await
         .map_err(|err| WheelVitalsError::from_async_zip("/".into(), err))?;
 
@@ -56,6 +58,7 @@ pub(crate) async fn lazy_read_wheel_metadata(
     reader
         .inner_mut()
         .get_mut()
+        .get_mut()
         .prefetch(offset..offset + size)
         .await;
 
@@ -72,7 +75,7 @@ pub(crate) async fn lazy_read_wheel_metadata(
     // Parse the wheel data
     let metadata = WheelCoreMetadata::try_from(contents.as_slice())?;
 
-    let stream = reader.into_inner().into_inner();
+    let stream = reader.into_inner().into_inner().into_inner();
     let ranges = stream.requested_ranges().await;
     let total_bytes_fetched: u64 = ranges.iter().map(|r| r.end - r.start).sum();
     tracing::debug!(
