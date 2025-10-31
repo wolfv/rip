@@ -87,7 +87,7 @@ impl SDist {
                 for i in 0..archive.len() {
                     let mut file = archive.by_index(i)?;
                     if let Some(file_path) = file.enclosed_name() {
-                        if skip_first_component(file_path) == name.as_ref() {
+                        if skip_first_component(&file_path) == name.as_ref() {
                             let mut bytes = Vec::new();
                             file.read_to_end(&mut bytes)?;
                             return Ok(Some(bytes));
@@ -133,7 +133,7 @@ impl SDist {
     }
 
     /// Get a lock on the inner data
-    pub fn lock_data(&self) -> parking_lot::MutexGuard<Box<dyn ReadAndSeek + Send>> {
+    pub fn lock_data(&self) -> parking_lot::MutexGuard<'_, Box<dyn ReadAndSeek + Send>> {
         self.file.lock()
     }
 }
@@ -243,22 +243,28 @@ enum Archives<'a> {
 fn generic_archive_reader(
     file: &mut Box<dyn ReadAndSeek + Send>,
     format: SDistFormat,
-) -> std::io::Result<Archives> {
+) -> std::io::Result<Archives<'_>> {
     file.rewind()?;
 
     match format {
         SDistFormat::TarGz => {
             let bytes = GzDecoder::new(file);
-            Ok(Archives::TarArchive(Box::new(Archive::new(RawAndGzReader::Gz(bytes)))))
+            Ok(Archives::TarArchive(Box::new(Archive::new(
+                RawAndGzReader::Gz(bytes),
+            ))))
         }
-        SDistFormat::Tar => Ok(Archives::TarArchive(Box::new(Archive::new(RawAndGzReader::Raw(file))))),
+        SDistFormat::Tar => Ok(Archives::TarArchive(Box::new(Archive::new(
+            RawAndGzReader::Raw(file),
+        )))),
         SDistFormat::Zip => {
             let zip = ZipArchive::new(file)?;
             Ok(Archives::Zip(Box::new(zip)))
-        },
+        }
         unsupported_format => Err(std::io::Error::new(
             ErrorKind::InvalidData,
-            format!("sdist archive format currently {unsupported_format} unsupported (only tar | tar.gz | zip are supported)"),
+            format!(
+                "sdist archive format currently {unsupported_format} unsupported (only tar | tar.gz | zip are supported)"
+            ),
         )),
     }
 }
@@ -268,8 +274,8 @@ mod tests {
     use crate::artifacts::SDist;
     use crate::index::ArtifactRequest;
     use crate::python_env::{Pep508EnvMakers, PythonLocation, VEnv};
-    use crate::resolve::solve_options::{ResolveOptions, SDistResolution};
     use crate::resolve::PypiVersion;
+    use crate::resolve::solve_options::{ResolveOptions, SDistResolution};
     use crate::types::{ArtifactFromSource, PackageName};
     use crate::types::{
         ArtifactInfo, ArtifactName, DistInfoMetadata, Extra, NormalizedPackageName, STreeFilename,
@@ -313,7 +319,7 @@ mod tests {
         assert_ron_snapshot!(build_system, @r###"
         BuildSystem(
           requires: [
-            "poetry-core >=1.0.0",
+            "poetry-core>=1.0.0",
           ],
           r#build-backend: Some("poetry.core.masonry.api"),
           r#backend-path: None,
@@ -869,14 +875,15 @@ mod tests {
         venv.install_wheel(&whl, &Default::default()).unwrap();
 
         // Check to make sure that the headers directory was created
-        assert!(venv
-            .root()
-            .join(
-                venv.install_paths()
-                    .site_packages()
-                    .join("rich/__init__.py")
-            )
-            .exists());
+        assert!(
+            venv.root()
+                .join(
+                    venv.install_paths()
+                        .site_packages()
+                        .join("rich/__init__.py")
+                )
+                .exists()
+        );
 
         let whl_metadata = whl.metadata().unwrap();
 

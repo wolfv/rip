@@ -11,9 +11,9 @@ categories = ["development-tools"]
 homepage = "https://github.com/prefix-dev/rip"
 repository = "https://github.com/prefix-dev/rip"
 license = "BSD-3-Clause"
-edition = "2021"
+edition = "2024"
 readme = "README.md"
-rust-version = "1.70"
+rust-version = "1.90"
 
 [workspace.metadata.release]
 allow-branch = ["main"]

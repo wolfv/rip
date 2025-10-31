@@ -4,466 +4,263 @@ expression: wheel_metadata.1.requires_dist
 ---
 [
     Requirement {
-        name: "click",
-        extras: None,
+        name: PackageName(
+            "click",
+        ),
+        extras: [],
         version_or_url: Some(
             VersionSpecifier(
                 VersionSpecifiers(
                     [
                         VersionSpecifier {
                             operator: GreaterThanEqual,
-                            version: Version {
-                                epoch: 0,
-                                release: [
-                                    8,
-                                    0,
-                                    0,
-                                ],
-                                pre: None,
-                                post: None,
-                                dev: None,
-                                local: None,
-                            },
+                            version: "8.0.0",
                         },
                     ],
                 ),
             ),
         ),
-        marker: None,
+        marker: true,
+        origin: None,
     },
     Requirement {
-        name: "mypy-extensions",
-        extras: None,
+        name: PackageName(
+            "mypy-extensions",
+        ),
+        extras: [],
         version_or_url: Some(
             VersionSpecifier(
                 VersionSpecifiers(
                     [
                         VersionSpecifier {
                             operator: GreaterThanEqual,
-                            version: Version {
-                                epoch: 0,
-                                release: [
-                                    0,
-                                    4,
-                                    3,
-                                ],
-                                pre: None,
-                                post: None,
-                                dev: None,
-                                local: None,
-                            },
+                            version: "0.4.3",
                         },
                     ],
                 ),
             ),
         ),
-        marker: None,
+        marker: true,
+        origin: None,
     },
     Requirement {
-        name: "packaging",
-        extras: None,
+        name: PackageName(
+            "packaging",
+        ),
+        extras: [],
         version_or_url: Some(
             VersionSpecifier(
                 VersionSpecifiers(
                     [
                         VersionSpecifier {
                             operator: GreaterThanEqual,
-                            version: Version {
-                                epoch: 0,
-                                release: [
-                                    22,
-                                    0,
-                                ],
-                                pre: None,
-                                post: None,
-                                dev: None,
-                                local: None,
-                            },
+                            version: "22.0",
                         },
                     ],
                 ),
             ),
         ),
-        marker: None,
+        marker: true,
+        origin: None,
     },
     Requirement {
-        name: "pathspec",
-        extras: None,
+        name: PackageName(
+            "pathspec",
+        ),
+        extras: [],
         version_or_url: Some(
             VersionSpecifier(
                 VersionSpecifiers(
                     [
                         VersionSpecifier {
                             operator: GreaterThanEqual,
-                            version: Version {
-                                epoch: 0,
-                                release: [
-                                    0,
-                                    9,
-                                    0,
-                                ],
-                                pre: None,
-                                post: None,
-                                dev: None,
-                                local: None,
-                            },
+                            version: "0.9.0",
                         },
                     ],
                 ),
             ),
         ),
-        marker: None,
+        marker: true,
+        origin: None,
     },
     Requirement {
-        name: "platformdirs",
-        extras: None,
+        name: PackageName(
+            "platformdirs",
+        ),
+        extras: [],
         version_or_url: Some(
             VersionSpecifier(
                 VersionSpecifiers(
                     [
                         VersionSpecifier {
                             operator: GreaterThanEqual,
-                            version: Version {
-                                epoch: 0,
-                                release: [
-                                    2,
-                                ],
-                                pre: None,
-                                post: None,
-                                dev: None,
-                                local: None,
-                            },
+                            version: "2",
                         },
                     ],
                 ),
             ),
         ),
-        marker: None,
+        marker: true,
+        origin: None,
     },
     Requirement {
-        name: "tomli",
-        extras: None,
+        name: PackageName(
+            "tomli",
+        ),
+        extras: [],
         version_or_url: Some(
             VersionSpecifier(
                 VersionSpecifiers(
                     [
                         VersionSpecifier {
                             operator: GreaterThanEqual,
-                            version: Version {
-                                epoch: 0,
-                                release: [
-                                    1,
-                                    1,
-                                    0,
-                                ],
-                                pre: None,
-                                post: None,
-                                dev: None,
-                                local: None,
-                            },
+                            version: "1.1.0",
                         },
                     ],
                 ),
             ),
         ),
-        marker: Some(
-            Expression(
-                MarkerExpression {
-                    l_value: MarkerEnvVersion(
-                        PythonVersion,
-                    ),
-                    operator: LessThan,
-                    r_value: QuotedString(
-                        "3.11",
-                    ),
-                },
-            ),
-        ),
+        marker: python_full_version < '3.11',
+        origin: None,
     },
     Requirement {
-        name: "typed-ast",
-        extras: None,
+        name: PackageName(
+            "typed-ast",
+        ),
+        extras: [],
         version_or_url: Some(
             VersionSpecifier(
                 VersionSpecifiers(
                     [
                         VersionSpecifier {
                             operator: GreaterThanEqual,
-                            version: Version {
-                                epoch: 0,
-                                release: [
-                                    1,
-                                    4,
-                                    2,
-                                ],
-                                pre: None,
-                                post: None,
-                                dev: None,
-                                local: None,
-                            },
+                            version: "1.4.2",
                         },
                     ],
                 ),
             ),
         ),
-        marker: Some(
-            And(
-                [
-                    Expression(
-                        MarkerExpression {
-                            l_value: MarkerEnvVersion(
-                                PythonVersion,
-                            ),
-                            operator: LessThan,
-                            r_value: QuotedString(
-                                "3.8",
-                            ),
-                        },
-                    ),
-                    Expression(
-                        MarkerExpression {
-                            l_value: MarkerEnvString(
-                                ImplementationName,
-                            ),
-                            operator: Equal,
-                            r_value: QuotedString(
-                                "cpython",
-                            ),
-                        },
-                    ),
-                ],
-            ),
-        ),
+        marker: python_full_version < '3.8' and implementation_name == 'cpython',
+        origin: None,
     },
     Requirement {
-        name: "typing-extensions",
-        extras: None,
+        name: PackageName(
+            "typing-extensions",
+        ),
+        extras: [],
         version_or_url: Some(
             VersionSpecifier(
                 VersionSpecifiers(
                     [
                         VersionSpecifier {
                             operator: GreaterThanEqual,
-                            version: Version {
-                                epoch: 0,
-                                release: [
-                                    3,
-                                    10,
-                                    0,
-                                    0,
-                                ],
-                                pre: None,
-                                post: None,
-                                dev: None,
-                                local: None,
-                            },
+                            version: "3.10.0.0",
                         },
                     ],
                 ),
             ),
         ),
-        marker: Some(
-            Expression(
-                MarkerExpression {
-                    l_value: MarkerEnvVersion(
-                        PythonVersion,
-                    ),
-                    operator: LessThan,
-                    r_value: QuotedString(
-                        "3.10",
-                    ),
-                },
-            ),
-        ),
+        marker: python_full_version < '3.10',
+        origin: None,
     },
     Requirement {
-        name: "colorama",
-        extras: None,
+        name: PackageName(
+            "colorama",
+        ),
+        extras: [],
         version_or_url: Some(
             VersionSpecifier(
                 VersionSpecifiers(
                     [
                         VersionSpecifier {
                             operator: GreaterThanEqual,
-                            version: Version {
-                                epoch: 0,
-                                release: [
-                                    0,
-                                    4,
-                                    3,
-                                ],
-                                pre: None,
-                                post: None,
-                                dev: None,
-                                local: None,
-                            },
+                            version: "0.4.3",
                         },
                     ],
                 ),
             ),
         ),
-        marker: Some(
-            Expression(
-                MarkerExpression {
-                    l_value: Extra,
-                    operator: Equal,
-                    r_value: QuotedString(
-                        "colorama",
-                    ),
-                },
-            ),
-        ),
+        marker: extra == 'colorama',
+        origin: None,
     },
     Requirement {
-        name: "aiohttp",
-        extras: None,
+        name: PackageName(
+            "aiohttp",
+        ),
+        extras: [],
         version_or_url: Some(
             VersionSpecifier(
                 VersionSpecifiers(
                     [
                         VersionSpecifier {
                             operator: GreaterThanEqual,
-                            version: Version {
-                                epoch: 0,
-                                release: [
-                                    3,
-                                    7,
-                                    4,
-                                ],
-                                pre: None,
-                                post: None,
-                                dev: None,
-                                local: None,
-                            },
+                            version: "3.7.4",
                         },
                     ],
                 ),
             ),
         ),
-        marker: Some(
-            Expression(
-                MarkerExpression {
-                    l_value: Extra,
-                    operator: Equal,
-                    r_value: QuotedString(
-                        "d",
-                    ),
-                },
-            ),
-        ),
+        marker: extra == 'd',
+        origin: None,
     },
     Requirement {
-        name: "ipython",
-        extras: None,
+        name: PackageName(
+            "ipython",
+        ),
+        extras: [],
         version_or_url: Some(
             VersionSpecifier(
                 VersionSpecifiers(
                     [
                         VersionSpecifier {
                             operator: GreaterThanEqual,
-                            version: Version {
-                                epoch: 0,
-                                release: [
-                                    7,
-                                    8,
-                                    0,
-                                ],
-                                pre: None,
-                                post: None,
-                                dev: None,
-                                local: None,
-                            },
+                            version: "7.8.0",
                         },
                     ],
                 ),
             ),
         ),
-        marker: Some(
-            Expression(
-                MarkerExpression {
-                    l_value: Extra,
-                    operator: Equal,
-                    r_value: QuotedString(
-                        "jupyter",
-                    ),
-                },
-            ),
-        ),
+        marker: extra == 'jupyter',
+        origin: None,
     },
     Requirement {
-        name: "tokenize-rt",
-        extras: None,
+        name: PackageName(
+            "tokenize-rt",
+        ),
+        extras: [],
         version_or_url: Some(
             VersionSpecifier(
                 VersionSpecifiers(
                     [
                         VersionSpecifier {
                             operator: GreaterThanEqual,
-                            version: Version {
-                                epoch: 0,
-                                release: [
-                                    3,
-                                    2,
-                                    0,
-                                ],
-                                pre: None,
-                                post: None,
-                                dev: None,
-                                local: None,
-                            },
+                            version: "3.2.0",
                         },
                     ],
                 ),
             ),
         ),
-        marker: Some(
-            Expression(
-                MarkerExpression {
-                    l_value: Extra,
-                    operator: Equal,
-                    r_value: QuotedString(
-                        "jupyter",
-                    ),
-                },
-            ),
-        ),
+        marker: extra == 'jupyter',
+        origin: None,
     },
     Requirement {
-        name: "uvloop",
-        extras: None,
+        name: PackageName(
+            "uvloop",
+        ),
+        extras: [],
         version_or_url: Some(
             VersionSpecifier(
                 VersionSpecifiers(
                     [
                         VersionSpecifier {
                             operator: GreaterThanEqual,
-                            version: Version {
-                                epoch: 0,
-                                release: [
-                                    0,
-                                    15,
-                                    2,
-                                ],
-                                pre: None,
-                                post: None,
-                                dev: None,
-                                local: None,
-                            },
+                            version: "0.15.2",
                         },
                     ],
                 ),
             ),
         ),
-        marker: Some(
-            Expression(
-                MarkerExpression {
-                    l_value: Extra,
-                    operator: Equal,
-                    r_value: QuotedString(
-                        "uvloop",
-                    ),
-                },
-            ),
-        ),
+        marker: extra == 'uvloop',
+        origin: None,
     },
 ]

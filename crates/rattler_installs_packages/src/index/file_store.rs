@@ -3,8 +3,8 @@
 
 use crate::types::ArtifactHashes;
 use crate::utils::retry_interrupted;
-use fs4::FileExt;
 use fs_err as fs;
+use fs4::fs_std::FileExt;
 use std::{
     io,
     io::{Read, Seek, SeekFrom, Write},
@@ -28,7 +28,7 @@ impl<T: CacheKey + ?Sized> CacheKey for &T {
 impl CacheKey for [u8] {
     fn key(&self) -> PathBuf {
         let hash = rattler_digest::compute_bytes_digest::<rattler_digest::Sha256>(self);
-        bytes_to_path_suffix(hash.as_slice())
+        bytes_to_path_suffix(hash.as_ref())
     }
 }
 
@@ -54,7 +54,7 @@ impl CacheKey for ArtifactHashes {
         let mut path = PathBuf::new();
         if let Some(sha256) = &self.sha256 {
             path.push("sha256");
-            path.push(bytes_to_path_suffix(sha256.as_slice()))
+            path.push(bytes_to_path_suffix(sha256.as_ref()))
         } else {
             unreachable!("should never have an artifact hash without any hashes")
         }
@@ -106,11 +106,11 @@ impl FileStore {
 
     /// Gets readable access to the data with the specified key. Returns `None` if no such key
     /// exists in the store.
-    pub async fn get<K: CacheKey>(&self, key: &K) -> Option<impl Read + Seek> {
-        if let Some(lock) = self.lock_if_exists(key).await {
-            if let Some(reader) = lock.reader() {
-                return Some(reader.detach_unlocked());
-            }
+    pub async fn get<K: CacheKey>(&self, key: &K) -> Option<impl Read + Seek + use<K>> {
+        if let Some(lock) = self.lock_if_exists(key).await
+            && let Some(reader) = lock.reader()
+        {
+            return Some(reader.detach_unlocked());
         }
         None
     }
@@ -225,7 +225,7 @@ pub struct FileLock {
 impl FileLock {
     /// Creates a reader to read the contents of the locked file. Returns `None` if the file could
     /// not be opened.
-    pub fn reader(&self) -> Option<LockedReader> {
+    pub fn reader(&self) -> Option<LockedReader<'_>> {
         Some(LockedReader {
             file: fs::File::open(&self.path).ok()?,
             _data: Default::default(),
@@ -234,7 +234,7 @@ impl FileLock {
 
     /// Starts writing the contents of the file returning a writer. Call [`LockedWriter::commit`] to
     /// persist the data in the store.
-    pub fn begin(&self) -> io::Result<LockedWriter> {
+    pub fn begin(&self) -> io::Result<LockedWriter<'_>> {
         Ok(LockedWriter {
             path: &self.path,
             f: tempfile::NamedTempFile::new_in(&self.tmp)?,

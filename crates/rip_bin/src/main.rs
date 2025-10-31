@@ -1,4 +1,4 @@
-use rip_bin::{cli, global_multi_progress, IndicatifWriter};
+use rip_bin::{IndicatifWriter, cli, global_multi_progress};
 
 use std::str::FromStr;
 use std::sync::Arc;
@@ -6,7 +6,7 @@ use std::sync::Arc;
 use clap::{Parser, Subcommand};
 use miette::Context;
 use tracing_subscriber::filter::Directive;
-use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 use rattler_installs_packages::index::{CheckAvailablePackages, PackageSourcesBuilder};
 

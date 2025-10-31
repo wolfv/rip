@@ -8,7 +8,10 @@ use crate::{types::ArtifactInfo, types::Extra, types::NormalizedPackageName};
 use elsa::FrozenMap;
 use pep440_rs::Version;
 use pep508_rs::{MarkerEnvironment, Requirement, VersionOrUrl};
-use resolvo::{DefaultSolvableDisplay, Pool, Solver, UnsolvableOrCancelled};
+use resolvo::{
+    ConditionalRequirement, Problem, Requirement as ResolvoRequirement, Solver,
+    UnsolvableOrCancelled, utils::Pool,
+};
 use std::collections::HashMap;
 use std::str::FromStr;
 use url::Url;
@@ -104,32 +107,42 @@ fn resolve_inner<'r>(
     for Requirement {
         name,
         version_or_url,
-        extras,
+        extras: req_extras,
         ..
     } in requirements
     {
-        let name = PackageName::from_str(name).expect("invalid package name");
-        let pypi_name = PypiPackageName::Base(name.clone().into());
+        let package_name = PackageName::from_str(name.as_ref()).expect("invalid package name");
+        let pypi_name = PypiPackageName::Base(package_name.clone().into());
         let dependency_package_name = pool.intern_package_name(pypi_name.clone());
         let version_set_id = pool.intern_version_set(
             dependency_package_name,
             PypiVersionSet::from_spec(version_or_url.clone(), &options.pre_release_resolution),
         );
-        root_requirements.push(version_set_id);
+        root_requirements.push(ConditionalRequirement {
+            condition: None,
+            requirement: ResolvoRequirement::Single(version_set_id),
+        });
 
-        if let Some(VersionOrUrl::Url(url)) = version_or_url {
-            name_to_url.insert(pypi_name.base().clone(), url.clone().as_str().to_owned());
+        if let Some(VersionOrUrl::Url(url)) = &version_or_url
+            && let Some(given) = url.given()
+        {
+            name_to_url.insert(pypi_name.base().clone(), given.to_owned());
         }
 
-        for extra in extras.iter().flatten() {
-            let extra: Extra = extra.parse().expect("invalid extra");
-            let dependency_package_name = pool
-                .intern_package_name(PypiPackageName::Extra(name.clone().into(), extra.clone()));
+        for extra in req_extras {
+            let extra: Extra = extra.as_ref().parse().expect("invalid extra");
+            let dependency_package_name = pool.intern_package_name(PypiPackageName::Extra(
+                package_name.clone().into(),
+                extra.clone(),
+            ));
             let version_set_id = pool.intern_version_set(
                 dependency_package_name,
                 PypiVersionSet::from_spec(version_or_url.clone(), &options.pre_release_resolution),
             );
-            root_requirements.push(version_set_id);
+            root_requirements.push(ConditionalRequirement {
+                condition: None,
+                requirement: ResolvoRequirement::Single(version_set_id),
+            });
         }
     }
 
@@ -146,20 +159,14 @@ fn resolve_inner<'r>(
 
     // Invoke the solver to get a solution to the requirements
     let mut solver = Solver::new(&provider).with_runtime(tokio::runtime::Handle::current());
-    let solvables = match solver.solve(root_requirements) {
+    let problem = Problem::default().requirements(root_requirements);
+    let solvables = match solver.solve(problem) {
         Ok(solvables) => solvables,
         Err(e) => {
             return match e {
                 UnsolvableOrCancelled::Unsolvable(problem) => Err(miette::miette!(
                     "{}",
-                    problem
-                        .display_user_friendly(
-                            &solver,
-                            solver.pool.clone(),
-                            &DefaultSolvableDisplay
-                        )
-                        .to_string()
-                        .trim()
+                    problem.display_user_friendly(&solver).to_string().trim()
                 )),
                 UnsolvableOrCancelled::Cancelled(e) => {
                     let e = e.downcast::<crate::resolve::dependency_provider::MetadataError>().expect("invalid cancellation error message, expected a MetadataError, this indicates an error in the code");
@@ -171,9 +178,9 @@ fn resolve_inner<'r>(
     };
     let mut result: HashMap<NormalizedPackageName, PinnedPackage> = HashMap::new();
     for solvable_id in solvables {
-        let solvable = solver.pool.resolve_solvable(solvable_id);
-        let name = solver.pool.resolve_package_name(solvable.name_id());
-        let version = solvable.inner();
+        let solvable = provider.pool.resolve_solvable(solvable_id);
+        let name = provider.pool.resolve_package_name(solvable.name);
+        let version = &solvable.record;
 
         let artifacts: Vec<_> = provider
             .cached_artifacts

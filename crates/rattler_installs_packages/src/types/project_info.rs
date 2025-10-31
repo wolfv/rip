@@ -3,9 +3,9 @@
 use crate::types::ArtifactName;
 use crate::types::HasArtifactName;
 use pep440_rs::VersionSpecifiers;
-use rattler_digest::{serde::SerializableHash, Sha256};
+use rattler_digest::{Sha256, serde::SerializableHash};
 use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, skip_serializing_none, DisplayFromStr, VecSkipError};
+use serde_with::{DisplayFromStr, VecSkipError, serde_as, skip_serializing_none};
 
 /// Represents the result of the response from the Simple API.
 #[serde_as]

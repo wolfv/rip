@@ -60,13 +60,13 @@ impl GitRev {
     }
 }
 
-impl ToString for GitRev {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for GitRev {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Branch(branch) => format!("refs/heads/{}", branch),
-            Self::Tag(tag) => format!("refs/tags/{}", tag),
-            Self::Head => "HEAD".into(),
-            Self::Commit(commit) => commit.clone(),
+            Self::Branch(branch) => write!(f, "refs/heads/{}", branch),
+            Self::Tag(tag) => write!(f, "refs/tags/{}", tag),
+            Self::Head => write!(f, "HEAD"),
+            Self::Commit(commit) => write!(f, "{}", commit),
         }
     }
 }
@@ -139,7 +139,8 @@ impl ParsedUrl {
     /// and return url without revision and the revision
     fn extract_revision_from_git_url(url: &str) -> Option<String> {
         // Split the string at '@' and take the second part
-        let rev = if url.contains('@') {
+
+        if url.contains('@') {
             let split: Vec<&str> = url.split('@').collect();
             if let Some((rev, _)) = split.split_last() {
                 Some(String::from(*rev))
@@ -148,18 +149,16 @@ impl ParsedUrl {
             }
         } else {
             None
-        };
-
-        rev
+        }
     }
 
     fn subdirectory_fragment(url: &str) -> Option<String> {
         let subdirectory_fragment_re = Regex::new(r#"[#&]subdirectory=([^&]*)"#).unwrap();
 
-        if let Some(captures) = subdirectory_fragment_re.captures(url) {
-            if let Some(subdirectory) = captures.get(1) {
-                return Some(subdirectory.as_str().to_string());
-            }
+        if let Some(captures) = subdirectory_fragment_re.captures(url)
+            && let Some(subdirectory) = captures.get(1)
+        {
+            return Some(subdirectory.as_str().to_string());
         }
         None
     }
@@ -172,9 +171,8 @@ impl ParsedUrl {
         });
 
         // Remove everything after ".git"
-        let clean_url = url.chars().take(repo_index).collect();
 
-        clean_url
+        url.chars().take(repo_index).collect()
     }
 }
 
@@ -308,13 +306,13 @@ pub fn git_clone(source: &GitSource) -> Result<(PathBuf, GitRev), SourceError> {
         ));
     }
 
-    let tmp_dir = tempfile::tempdir().unwrap().into_path();
+    let tmp_dir = tempfile::tempdir().unwrap().keep();
 
     let cache_dir = tmp_dir.join("rip-git-cache");
     let recipe_dir = tmp_dir.join("rip-clone-dir");
 
     let filename = match &source.url() {
-        GitUrl::Url(url) => (|| Some(url.path_segments()?.last()?.to_string()))()
+        GitUrl::Url(url) => (|| Some(url.path_segments()?.next_back()?.to_string()))()
             .ok_or_else(|| SourceError::GitErrorStr("failed to get filename from url"))?,
         GitUrl::Path(path) => recipe_dir
             .join(path)

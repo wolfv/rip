@@ -4,11 +4,11 @@
 //! and creating the necessary files. See: [VEnv](https://packaging.python.org/en/latest/specifications/virtual-environments/#declaring-installation-environments-as-python-virtual-environments)
 use crate::artifacts::wheel::Wheel;
 use crate::install::{
-    install_wheel, InstallError, InstallPaths, InstallWheelOptions, InstalledWheel,
+    InstallError, InstallPaths, InstallWheelOptions, InstalledWheel, install_wheel,
 };
 use crate::python_env::{
-    system_python_executable, FindPythonError, ParsePythonInterpreterVersionError,
-    PythonInterpreterVersion,
+    FindPythonError, ParsePythonInterpreterVersionError, PythonInterpreterVersion,
+    system_python_executable,
 };
 use fs_err as fs;
 use std::ffi::OsStr;

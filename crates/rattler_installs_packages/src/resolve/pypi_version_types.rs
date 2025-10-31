@@ -6,7 +6,7 @@ use crate::resolve::solve_options::PreReleaseResolution;
 use crate::types::{Extra, NormalizedPackageName};
 use pep440_rs::Version;
 use pep508_rs::VersionOrUrl;
-use resolvo::VersionSet;
+use resolvo::utils::VersionSet;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use url::Url;
@@ -101,10 +101,13 @@ impl PypiVersion {
 
 impl VersionSet for PypiVersionSet {
     type V = PypiVersion;
+}
 
-    fn contains(&self, v: &Self::V) -> bool {
+impl PypiVersionSet {
+    /// Returns true if the given version is contained in this version set.
+    pub fn contains(&self, v: &PypiVersion) -> bool {
         match (self.spec.as_ref(), v) {
-            (Some(VersionOrUrl::Url(a)), PypiVersion::Url(b)) => a == b,
+            (Some(VersionOrUrl::Url(a)), PypiVersion::Url(b)) => a.given() == Some(b.as_str()),
             (
                 Some(VersionOrUrl::VersionSpecifier(spec)),
                 PypiVersion::Version {

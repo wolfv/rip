@@ -2,13 +2,13 @@ use crate::install::InstallWheelOptions;
 use crate::types::ArtifactFromSource;
 
 use crate::python_env::{PythonLocation, VEnv};
-use crate::resolve::{resolve, PinnedPackage};
+use crate::resolve::{PinnedPackage, resolve};
 use crate::utils::normalize_path;
 use crate::wheel_builder::{WheelBuildError, WheelBuilder};
 use fs_err as fs;
 use fs_err::read_dir;
 use parking_lot::RwLock;
-use pep508_rs::Requirement;
+use pep508_rs::{MarkerTree, PackageName, Requirement};
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsString;
 
@@ -32,7 +32,7 @@ impl DeleteOrPersist {
         if let Self::Delete(temp_dir) = self {
             // This operation makes sure that the tempdir is not deleted
             // when the BuildEnvironment is dropped
-            Self::Persist(temp_dir.into_path())
+            Self::Persist(temp_dir.keep())
         } else {
             self
         }
@@ -319,10 +319,7 @@ impl BuildEnvironment {
                 std::env::join_paths(paths.iter()).map_err(|e| {
                     WheelBuildError::CouldNotRunCommand(
                         stage.into(),
-                        std::io::Error::new(
-                            std::io::ErrorKind::Other,
-                            format!("could not setup env path: {}", e),
-                        ),
+                        std::io::Error::other(format!("could not setup env path: {}", e)),
                     )
                 })?
             }
@@ -357,16 +354,18 @@ impl BuildEnvironment {
         pyproject_toml::BuildSystem {
             requires: vec![
                 Requirement {
-                    name: "setuptools".into(),
-                    extras: None,
-                    marker: None,
+                    name: PackageName::new("setuptools".to_string()).unwrap(),
+                    extras: Vec::new(),
+                    marker: MarkerTree::default(),
                     version_or_url: None,
+                    origin: None,
                 },
                 Requirement {
-                    name: "wheel".into(),
-                    extras: None,
-                    marker: None,
+                    name: PackageName::new("wheel".to_string()).unwrap(),
+                    extras: Vec::new(),
+                    marker: MarkerTree::default(),
                     version_or_url: None,
+                    origin: None,
                 },
             ],
             build_backend: Some("setuptools.build_meta:__legacy__".into()),

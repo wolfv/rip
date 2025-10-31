@@ -1,4 +1,4 @@
-use crate::python_env::{system_python_executable, FindPythonError, WheelTag, WheelTags};
+use crate::python_env::{FindPythonError, WheelTag, WheelTags, system_python_executable};
 use crate::utils::VENDORED_PACKAGING_DIR;
 use serde::Deserialize;
 use std::io;
@@ -52,7 +52,7 @@ impl WheelTags {
             Err(e) if e.kind() == ErrorKind::NotFound => {
                 return Err(FromPythonError::CouldNotFindPythonExecutable(
                     FindPythonError::NotFound,
-                ))
+                ));
             }
             Err(e) => return Err(FromPythonError::FailedToExecute(e)),
             Ok(output) => output,

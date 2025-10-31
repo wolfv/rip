@@ -8,18 +8,7 @@ SDist(
             source: "rich",
             normalized: "rich",
         },
-        version: Version {
-            epoch: 0,
-            release: [
-                13,
-                6,
-                0,
-            ],
-            pre: None,
-            post: None,
-            dev: None,
-            local: None,
-        },
+        version: "13.6.0",
         format: TarGz,
     },
 )

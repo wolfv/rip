@@ -9,7 +9,7 @@ pub use test::{get_package_db, setup};
 
 use std::path::{Component, Path, PathBuf};
 
-use include_dir::{include_dir, Dir};
+use include_dir::{Dir, include_dir};
 use url::Url;
 
 pub use read_and_seek::ReadAndSeek;

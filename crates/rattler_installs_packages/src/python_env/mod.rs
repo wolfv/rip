@@ -18,11 +18,11 @@ pub use tags::{WheelTag, WheelTags};
 
 pub use byte_code_compiler::{ByteCodeCompiler, CompilationError, SpawnCompilerError};
 pub use distribution_finder::{
-    find_distributions_in_directory, find_distributions_in_venv, Distribution,
-    FindDistributionError,
+    Distribution, FindDistributionError, find_distributions_in_directory,
+    find_distributions_in_venv,
 };
 pub use env_markers::Pep508EnvMakers;
-pub(crate) use system_python::{system_python_executable, FindPythonError};
+pub(crate) use system_python::{FindPythonError, system_python_executable};
 pub use system_python::{ParsePythonInterpreterVersionError, PythonInterpreterVersion};
-pub use uninstall::{uninstall_distribution, UninstallDistributionError};
+pub use uninstall::{UninstallDistributionError, uninstall_distribution};
 pub use venv::{PythonLocation, VEnv, VEnvError};

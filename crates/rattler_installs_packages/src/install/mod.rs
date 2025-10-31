@@ -1,12 +1,12 @@
 //! Functionality to install wheels.
 
 use crate::{
-    artifacts::wheel::WheelVitalsError,
     artifacts::Wheel,
+    artifacts::wheel::WheelVitalsError,
     python_env::{ByteCodeCompiler, CompilationError},
     types::{DirectUrlJson, EntryPoint, Extra, Record, RecordEntry},
     utils::ReadAndSeek,
-    win::launcher::{build_windows_launcher, LauncherType, WindowsLauncherArch},
+    win::launcher::{LauncherType, WindowsLauncherArch, build_windows_launcher},
 };
 use configparser::ini::Ini;
 use data_encoding::BASE64URL_NOPAD;
@@ -22,8 +22,8 @@ use std::{
     sync::mpsc::channel,
 };
 use thiserror::Error;
-use zip::result::ZipError;
 use zip::ZipArchive;
+use zip::result::ZipError;
 
 mod install_paths;
 
@@ -185,7 +185,7 @@ pub fn install_wheel(
         let mut zip_entry = archive
             .by_index(index)
             .map_err(|e| InstallError::from_zip_error(format!("<index {index}>"), e))?;
-        let Some(relative_path) = zip_entry.enclosed_name().map(ToOwned::to_owned) else {
+        let Some(relative_path) = zip_entry.enclosed_name() else {
             // Skip invalid paths
             continue;
         };
@@ -196,7 +196,7 @@ pub fn install_wheel(
         // > 6. RECORD.jws is used for digital signatures. It is not mentioned in RECORD.
         // > 7. RECORD.p7s is allowed as a courtesy to anyone who would prefer to use S/MIME
         // >    signatures to secure their wheel files. It is not mentioned in RECORD.
-        if relative_path == record_relative_path
+        if relative_path == *record_relative_path
             || relative_path == record_relative_path.with_extension("jws")
             || relative_path == record_relative_path.with_extension("p7s")
         {
@@ -277,22 +277,19 @@ pub fn install_wheel(
         };
 
         // If the file is a python file we need to compile it to bytecode
-        if let Some(bytecode_compiler) = options.byte_code_compiler.as_ref() {
-            if destination.extension() == Some(OsStr::new("py")) {
-                let pyc_tx = pyc_tx.clone();
-                let cloned_destination = destination.clone();
-                bytecode_compiler
-                    .compile(&destination, move |result| {
-                        // Ignore any error that might occur due to the receiver being closed.
-                        let _ = pyc_tx.send((cloned_destination, result));
-                    })
-                    .map_err(|err| {
-                        InstallError::ByteCodeCompilationFailed(
-                            destination.display().to_string(),
-                            err,
-                        )
-                    })?;
-            }
+        if let Some(bytecode_compiler) = options.byte_code_compiler.as_ref()
+            && destination.extension() == Some(OsStr::new("py"))
+        {
+            let pyc_tx = pyc_tx.clone();
+            let cloned_destination = destination.clone();
+            bytecode_compiler
+                .compile(&destination, move |result| {
+                    // Ignore any error that might occur due to the receiver being closed.
+                    let _ = pyc_tx.send((cloned_destination, result));
+                })
+                .map_err(|err| {
+                    InstallError::ByteCodeCompilationFailed(destination.display().to_string(), err)
+                })?;
         }
 
         // Make sure the hash matches with what we expect
@@ -821,7 +818,7 @@ mod test {
     use super::*;
     use crate::{
         artifacts::wheel::*,
-        python_env::{system_python_executable, ByteCodeCompiler, PythonLocation, VEnv, WheelTags},
+        python_env::{ByteCodeCompiler, PythonLocation, VEnv, WheelTags, system_python_executable},
         types::{
             DirectUrlHashes, DirectUrlJson, DirectUrlSource, NormalizedPackageName, WheelFilename,
         },
@@ -831,15 +828,21 @@ mod test {
     use std::fs;
     use std::path::{Path, PathBuf};
     use std::str::FromStr;
-    use tempfile::{tempdir, TempDir};
+    use tempfile::{TempDir, tempdir};
     use test_utils::download_and_cache_file_async;
     use url::Url;
 
     const INSTALLER: &str = "pixi_test";
 
     #[rstest]
-    #[case("https://files.pythonhosted.org/packages/58/76/705b5c776f783d1ba7c630347463d4ae323282bbd859a8e9420c7ff79581/selenium-4.1.0-py3-none-any.whl", "27e7b64df961d609f3d57237caa0df123abbbe22d038f2ec9e332fb90ec1a939")]
-    #[case("https://files.pythonhosted.org/packages/1e/27/47f73510c6b80d1ff0829474947537ae9ab8d516cc48c6320b7f3677fa54/selenium-2.53.2-py2.py3-none-any.whl", "fa8333cf3013497e60d87ba68cae65ead8e7fa208be88ab9c561556103f540ef")]
+    #[case(
+        "https://files.pythonhosted.org/packages/58/76/705b5c776f783d1ba7c630347463d4ae323282bbd859a8e9420c7ff79581/selenium-4.1.0-py3-none-any.whl",
+        "27e7b64df961d609f3d57237caa0df123abbbe22d038f2ec9e332fb90ec1a939"
+    )]
+    #[case(
+        "https://files.pythonhosted.org/packages/1e/27/47f73510c6b80d1ff0829474947537ae9ab8d516cc48c6320b7f3677fa54/selenium-2.53.2-py2.py3-none-any.whl",
+        "fa8333cf3013497e60d87ba68cae65ead8e7fa208be88ab9c561556103f540ef"
+    )]
     fn test_wheels(#[case] url: Url, #[case] sha256: &str) {
         test_wheel_unpack(
             test_utils::download_and_cache_file(url, sha256).unwrap(),
@@ -936,6 +939,7 @@ mod test {
     }
 
     #[test]
+    #[cfg_attr(target_os = "macos", ignore)]
     fn test_byte_code_compilation() {
         // We check this specific package because some of the files will fail to compile.
         let package_path = test_utils::download_and_cache_file(

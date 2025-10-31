@@ -5,10 +5,10 @@ use miette::{Context, IntoDiagnostic};
 use rattler_installs_packages::index::PackageDb;
 use rattler_installs_packages::install::InstallWheelOptions;
 use rattler_installs_packages::python_env::{Pep508EnvMakers, PythonLocation, WheelTags};
+use rattler_installs_packages::resolve::PinnedPackage;
 use rattler_installs_packages::resolve::solve_options::{
     OnWheelBuildFailure, PreReleaseResolution, ResolveOptions, SDistResolution,
 };
-use rattler_installs_packages::resolve::PinnedPackage;
 use rattler_installs_packages::types::Requirement;
 use rattler_installs_packages::wheel_builder::WheelBuilder;
 use serde::Serialize;
@@ -208,7 +208,7 @@ pub async fn execute(package_db: Arc<PackageDb>, commands: Commands) -> miette::
                 return Ok(());
             } else {
                 Err(err.wrap_err("Could not solve for requested requirements"))
-            }
+            };
         }
     };
 

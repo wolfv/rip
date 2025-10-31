@@ -4,7 +4,7 @@ use std::{
     env,
     io::{Cursor, Write},
 };
-use zip::{write::FileOptions, ZipWriter};
+use zip::ZipWriter;
 
 /// Defines the type of script to run. This is either a GUI application or a console application.
 /// When running a console application a terminal is expected. When running a GUI application the
@@ -73,7 +73,8 @@ pub fn build_windows_launcher(
     // https://github.com/pypa/distlib/blob/8ed03aab48add854f377ce392efffb79bb4d6091/PC/launcher.c#L259-L271
     let mut stream: Vec<u8> = Vec::new();
     {
-        let stored = FileOptions::default().compression_method(zip::CompressionMethod::Stored);
+        let stored = zip::write::FileOptions::<()>::default()
+            .compression_method(zip::CompressionMethod::Stored);
         let mut archive = ZipWriter::new(Cursor::new(&mut stream));
         let error_msg = "Writing to Vec<u8> should never fail";
         archive.start_file("__main__.py", stored).expect(error_msg);

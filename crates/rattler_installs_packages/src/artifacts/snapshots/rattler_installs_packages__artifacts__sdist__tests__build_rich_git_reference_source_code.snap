@@ -8,18 +8,7 @@ STree(
             source: "rich",
             normalized: "rich",
         },
-        version: Version {
-            epoch: 0,
-            release: [
-                13,
-                7,
-                0,
-            ],
-            pre: None,
-            post: None,
-            dev: None,
-            local: None,
-        },
+        version: "13.7.0",
         url: Url {
             scheme: "git+https",
             cannot_be_a_base: false,

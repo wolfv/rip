@@ -7,7 +7,7 @@ use futures::{Stream, StreamExt, TryStreamExt};
 use http_cache_semantics::{AfterResponse, BeforeRequest, CachePolicy};
 use miette::Diagnostic;
 use reqwest::header::{ACCEPT, CACHE_CONTROL};
-use reqwest::{header::HeaderMap, Method};
+use reqwest::{Method, header::HeaderMap};
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{Deserialize, Serialize};
 use std::io;
@@ -321,12 +321,12 @@ fn verify_cache_bom_and_version<R: Read + Seek>(
 }
 
 /// Fill the cache with the
-async fn fill_cache_async(
+async fn fill_cache_async<S: Stream<Item = reqwest::Result<Bytes>> + Send + Unpin>(
     policy: &CachePolicy,
     url: &Url,
-    mut body: impl Stream<Item = reqwest::Result<Bytes>> + Send + Unpin,
+    mut body: S,
     handle: FileLock,
-) -> Result<impl Read + Seek, std::io::Error> {
+) -> Result<impl Read + Seek + use<S>, std::io::Error> {
     let cache_writer = handle.begin()?;
     let mut buf_cache_writer = BufWriter::new(cache_writer);
 
@@ -369,11 +369,7 @@ async fn fill_cache_async(
     buf_cache_writer.seek(SeekFrom::Start(body_start)).unwrap();
 
     while let Some(bytes) = body.next().await {
-        buf_cache_writer.write_all(
-            bytes
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?
-                .as_ref(),
-        )?;
+        buf_cache_writer.write_all(bytes.map_err(std::io::Error::other)?.as_ref())?;
     }
 
     let body_end = buf_cache_writer.stream_position()?;
@@ -424,7 +420,7 @@ fn body_to_streaming_or_local(
 ) -> StreamingOrLocal {
     StreamingOrLocal::Streaming(Box::new(
         stream
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
+            .map_err(std::io::Error::other)
             .into_async_read()
             .compat(),
     ))
@@ -434,16 +430,16 @@ fn body_to_streaming_or_local(
 mod tests {
     use crate::index::{
         file_store::FileStore,
-        http::{write_cache_bom_and_metadata, CACHE_BOM, CURRENT_VERSION},
+        http::{CACHE_BOM, CURRENT_VERSION, write_cache_bom_and_metadata},
     };
-    use http::{header::CACHE_CONTROL, HeaderMap, HeaderValue, Method};
+    use http::{HeaderMap, HeaderValue, Method, header::CACHE_CONTROL};
     use reqwest::Client;
     use reqwest_middleware::ClientWithMiddleware;
 
     use std::{fs, io::BufWriter, sync::Arc};
     use tempfile::TempDir;
 
-    use super::{key_for_request, read_cache, CacheMode, Http};
+    use super::{CacheMode, Http, key_for_request, read_cache};
 
     fn get_http_client() -> (Arc<Http>, TempDir) {
         let tempdir = tempfile::tempdir().unwrap();

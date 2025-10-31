@@ -7,203 +7,114 @@ WheelCoreMetadata {
         source: "rich",
         normalized: "rich",
     },
-    version: Version {
-        epoch: 0,
-        release: [
-            13,
-            6,
-            0,
-        ],
-        pre: None,
-        post: None,
-        dev: None,
-        local: None,
-    },
+    version: "13.6.0",
     metadata_version: MetadataVersion(
-        Version {
-            epoch: 0,
-            release: [
-                2,
-                1,
-            ],
-            pre: None,
-            post: None,
-            dev: None,
-            local: None,
-        },
+        "2.4",
     ),
     requires_dist: [
         Requirement {
-            name: "ipywidgets",
-            extras: None,
+            name: PackageName(
+                "ipywidgets",
+            ),
+            extras: [],
             version_or_url: Some(
                 VersionSpecifier(
                     VersionSpecifiers(
                         [
                             VersionSpecifier {
                                 operator: GreaterThanEqual,
-                                version: Version {
-                                    epoch: 0,
-                                    release: [
-                                        7,
-                                        5,
-                                        1,
-                                    ],
-                                    pre: None,
-                                    post: None,
-                                    dev: None,
-                                    local: None,
-                                },
+                                version: "7.5.1",
                             },
                             VersionSpecifier {
                                 operator: LessThan,
-                                version: Version {
-                                    epoch: 0,
-                                    release: [
-                                        9,
-                                    ],
-                                    pre: None,
-                                    post: None,
-                                    dev: None,
-                                    local: None,
-                                },
+                                version: "9",
                             },
                         ],
                     ),
                 ),
             ),
-            marker: Some(
-                Expression(
-                    MarkerExpression {
-                        l_value: Extra,
-                        operator: Equal,
-                        r_value: QuotedString(
-                            "jupyter",
-                        ),
-                    },
-                ),
-            ),
+            marker: extra == 'jupyter',
+            origin: None,
         },
         Requirement {
-            name: "markdown-it-py",
-            extras: None,
+            name: PackageName(
+                "markdown-it-py",
+            ),
+            extras: [],
             version_or_url: Some(
                 Url(
-                    Url {
-                        scheme: "git+https",
-                        cannot_be_a_base: false,
-                        username: "",
-                        password: None,
-                        host: Some(
-                            Domain(
-                                "github.com",
+                    VerbatimUrl {
+                        url: Url {
+                            scheme: "git+https",
+                            cannot_be_a_base: false,
+                            username: "",
+                            password: None,
+                            host: Some(
+                                Domain(
+                                    "github.com",
+                                ),
                             ),
+                            port: None,
+                            path: "/executablebooks/markdown-it-py.git",
+                            query: None,
+                            fragment: None,
+                        },
+                        given: Some(
+                            "git+https://github.com/executablebooks/markdown-it-py.git",
                         ),
-                        port: None,
-                        path: "/executablebooks/markdown-it-py.git",
-                        query: None,
-                        fragment: None,
                     },
                 ),
             ),
-            marker: None,
+            marker: true,
+            origin: None,
         },
         Requirement {
-            name: "pygments",
-            extras: None,
+            name: PackageName(
+                "pygments",
+            ),
+            extras: [],
             version_or_url: Some(
                 VersionSpecifier(
                     VersionSpecifiers(
                         [
                             VersionSpecifier {
                                 operator: GreaterThanEqual,
-                                version: Version {
-                                    epoch: 0,
-                                    release: [
-                                        2,
-                                        13,
-                                        0,
-                                    ],
-                                    pre: None,
-                                    post: None,
-                                    dev: None,
-                                    local: None,
-                                },
+                                version: "2.13.0",
                             },
                             VersionSpecifier {
                                 operator: LessThan,
-                                version: Version {
-                                    epoch: 0,
-                                    release: [
-                                        3,
-                                        0,
-                                        0,
-                                    ],
-                                    pre: None,
-                                    post: None,
-                                    dev: None,
-                                    local: None,
-                                },
+                                version: "3.0.0",
                             },
                         ],
                     ),
                 ),
             ),
-            marker: None,
+            marker: true,
+            origin: None,
         },
         Requirement {
-            name: "typing-extensions",
-            extras: None,
+            name: PackageName(
+                "typing-extensions",
+            ),
+            extras: [],
             version_or_url: Some(
                 VersionSpecifier(
                     VersionSpecifiers(
                         [
                             VersionSpecifier {
                                 operator: GreaterThanEqual,
-                                version: Version {
-                                    epoch: 0,
-                                    release: [
-                                        4,
-                                        0,
-                                        0,
-                                    ],
-                                    pre: None,
-                                    post: None,
-                                    dev: None,
-                                    local: None,
-                                },
+                                version: "4.0.0",
                             },
                             VersionSpecifier {
                                 operator: LessThan,
-                                version: Version {
-                                    epoch: 0,
-                                    release: [
-                                        5,
-                                        0,
-                                    ],
-                                    pre: None,
-                                    post: None,
-                                    dev: None,
-                                    local: None,
-                                },
+                                version: "5.0",
                             },
                         ],
                     ),
                 ),
             ),
-            marker: Some(
-                Expression(
-                    MarkerExpression {
-                        l_value: MarkerEnvVersion(
-                            PythonVersion,
-                        ),
-                        operator: LessThan,
-                        r_value: QuotedString(
-                            "3.9",
-                        ),
-                    },
-                ),
-            ),
+            marker: python_full_version < '3.9',
+            origin: None,
         },
     ],
     requires_python: Some(
@@ -211,18 +122,7 @@ WheelCoreMetadata {
             [
                 VersionSpecifier {
                     operator: GreaterThanEqual,
-                    version: Version {
-                        epoch: 0,
-                        release: [
-                            3,
-                            7,
-                            0,
-                        ],
-                        pre: None,
-                        post: None,
-                        dev: None,
-                        local: None,
-                    },
+                    version: "3.7.0",
                 },
             ],
         ),

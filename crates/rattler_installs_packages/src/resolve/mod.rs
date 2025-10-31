@@ -16,4 +16,4 @@ mod solve_types;
 
 pub use pypi_version_types::PypiVersion;
 pub use pypi_version_types::PypiVersionSet;
-pub use solve::{resolve, PinnedPackage};
+pub use solve::{PinnedPackage, resolve};

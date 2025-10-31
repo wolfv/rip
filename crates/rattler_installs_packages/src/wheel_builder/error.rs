@@ -45,9 +45,7 @@ pub enum WheelBuildError {
     #[error("backend path in pyproject.toml not relative: {0}")]
     BackendPathNotRelative(PathBuf),
 
-    #[error(
-        "backend path in pyproject.toml not resolving to a path in the package directory: {0}"
-    )]
+    #[error("backend path in pyproject.toml not resolving to a path in the package directory: {0}")]
     BackendPathNotInPackageDir(PathBuf),
 
     #[error("could not join path: {0}")]

@@ -76,16 +76,16 @@ impl EntryPoint {
             .ok_or(ParseEntryPointError::InvalidFormat)?;
 
         // Check the extras part
-        if let Some(script_extras) = captures.name("extras") {
-            if let Some(extras) = extras {
-                let entry_point_extras = script_extras
-                    .as_str()
-                    .split(',')
-                    .map(|extra| Extra::from_str(extra.trim()));
-                for entry_point_extras in entry_point_extras {
-                    if !extras.contains(&entry_point_extras?) {
-                        return Ok(None);
-                    }
+        if let Some(script_extras) = captures.name("extras")
+            && let Some(extras) = extras
+        {
+            let entry_point_extras = script_extras
+                .as_str()
+                .split(',')
+                .map(|extra| Extra::from_str(extra.trim()));
+            for entry_point_extras in entry_point_extras {
+                if !extras.contains(&entry_point_extras?) {
+                    return Ok(None);
                 }
             }
         }

@@ -55,11 +55,10 @@ struct WheelKeyMetadata {
     integrity: String,
 }
 
-impl ToString for WheelCacheKey {
-    /// Get WheelKey string representation without suffix
-    fn to_string(&self) -> String {
+impl std::fmt::Display for WheelCacheKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut parts = self.0.split(':');
-        parts.nth(1).unwrap_or_default().to_owned()
+        write!(f, "{}", parts.nth(1).unwrap_or_default())
     }
 }
 
@@ -206,7 +205,7 @@ mod tests {
 
     #[test]
     pub fn save_retrieve_wheel() {
-        let cache = WheelCache::new(tempfile::tempdir().unwrap().into_path());
+        let cache = WheelCache::new(tempfile::tempdir().unwrap().keep());
 
         // Load the wheel file
         let path = Path::new(env!("CARGO_MANIFEST_DIR"))
