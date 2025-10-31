@@ -123,10 +123,10 @@ fn resolve_inner<'r>(
             requirement: ResolvoRequirement::Single(version_set_id),
         });
 
-        if let Some(VersionOrUrl::Url(url)) = &version_or_url {
-            if let Some(given) = url.given() {
-                name_to_url.insert(pypi_name.base_package().clone(), given.to_owned());
-            }
+        if let Some(VersionOrUrl::Url(url)) = &version_or_url
+            && let Some(given) = url.given()
+        {
+            name_to_url.insert(pypi_name.base_package().clone(), given.to_owned());
         }
 
         for extra in req_extras {
@@ -185,10 +185,10 @@ fn resolve_inner<'r>(
         // Skip extra feature solvables - they're not real packages
         if name.is_extra_feature() {
             // Record the extra in the base package if it exists
-            if let PypiPackageName::ExtraFeature(base_name, extra) = name {
-                if let Some(entry) = result.get_mut(base_name) {
-                    entry.extras.insert(extra.clone());
-                }
+            if let PypiPackageName::ExtraFeature(base_name, extra) = name
+                && let Some(entry) = result.get_mut(base_name)
+            {
+                entry.extras.insert(extra.clone());
             }
             continue;
         }
